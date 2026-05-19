@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d6efd">
+  <title>Генератор штрих-кодов склада</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+  <div id="app" class="min-vh-100 bg-light p-3">
+    <div class="container py-3" v-if="loading">
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3">Загрузка данных...</p>
+      </div>
+    </div>
+    <div class="container py-3" v-if="error">
+      <div class="card border-danger">
+        <div class="card-body text-center">
+          <h5 class="card-title text-danger">Ошибка загрузки</h5>
+          <p class="card-text">Не удалось загрузить данные. Проверьте подключение и обновите страницу.</p>
+          <button class="btn btn-danger btn-lg" @click="retryLoad" aria-label="Повторить загрузку">Повторить</button>
+        </div>
+      </div>
+    </div>
+    <div v-if="!loading && !error">
+      <!-- Welcome -->
+      <div v-if="currentScreen === 'welcome'" class="screen">
+        <div class="text-center py-4">
+          <h1 class="mb-3">Генератор штрих-кодов</h1>
+          <p class="text-muted mb-4">Выберите полку для генерации штрих-кода</p>
+          <div class="row g-3 mb-4 justify-content-center">
+            <div class="col-6 col-md-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h3 class="card-title text-primary">{{ stats.totalSections }}</h3>
+                  <small class="text-muted">Секций</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h3 class="card-title text-primary">{{ stats.totalShelves }}</h3>
+                  <small class="text-muted">Стеллажей</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h3 class="card-title text-primary">{{ stats.totalPallets }}</h3>
+                  <small class="text-muted">Поддонов</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h3 class="card-title text-primary">{{ stats.totalZones }}</h3>
+                  <small class="text-muted">Служебных зон</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-lg py-3 px-5" @click="push('sections')" aria-label="Начать работу">Начать</button>
+        </div>
+      </div>
+
+      <!-- Sections -->
+      <div v-if="currentScreen === 'sections'" class="screen">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="mb-0">Секции</h2>
+          <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠 На главную</button>
+        </div>
+        <div class="row g-3">
+          <div v-for="sec in sectionList" :key="sec.name" class="col-6 col-md-4">
+            <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectSection(sec.name)">
+              {{ sec.label }}
+              <br><small class="text-muted">{{ sec.count }} полок</small>
+            </button>
+          </div>
+          <div class="col-6 col-md-4">
+            <button class="btn btn-outline-warning btn-lg w-100 py-3" @click="selectSection('СЛУЖЕБНАЯ')">
+              Служебные зоны
+              <br><small class="text-muted">{{ zones.length }} зон</small>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Storage Type -->
+      <div v-if="currentScreen === 'storageType'" class="screen">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="mb-0">{{ selectedSection }} — Тип хранения</h2>
+          <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="back" aria-label="Назад">← Назад</button>
+            <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div v-if="hasRacks" class="col-6">
+            <button class="btn btn-primary btn-lg w-100 py-3" @click="push('racks')">Стеллажи</button>
+          </div>
+          <div v-if="hasPallets" class="col-6">
+            <button class="btn btn-primary btn-lg w-100 py-3" @click="push('pallets')">Поддоны</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Racks -->
+      <div v-if="currentScreen === 'racks'" class="screen">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="mb-0">{{ selectedSection }} — Стеллажи</h2>
+          <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="back" aria-label="Назад">← Назад</button>
+            <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
+          </div>
+        </div>
+        <div class="row g-2">
+          <div v-for="rack in paginatedRacks" :key="rack.name" class="col-6 col-md-4">
+            <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectRack(rack)">
+              {{ rack.name }}
+            </button>
+          </div>
+        </div>
+        <nav-pagination v-if="racksTotalPages > 1" :page="pagination.page" :total="racksTotalPages" @change="pagination.page = $event" />
+      </div>
+
+      <!-- Levels -->
+      <div v-if="currentScreen === 'levels'" class="screen">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="mb-0">{{ selectedRack.name }} — Уровни</h2>
+          <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="back" aria-label="Назад">← Назад</button>
+            <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
+          </div>
+        </div>
+        <div class="row g-2">
+          <div v-for="lvl in levels" :key="lvl.level" class="col-6">
+            <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectShelf(lvl)">
+              Уровень {{ lvl.level }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pallets -->
+      <div v-if="currentScreen === 'pallets'" class="screen">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="mb-0">{{ selectedSection }} — Поддоны</h2>
+          <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="back">← Назад</button>
+            <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
+          </div>
+        </div>
+        <div class="row g-2">
+          <div v-for="pallet in paginatedPallets" :key="pallet.name" class="col-6 col-md-4">
+            <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectShelf(pallet)">
+              {{ pallet.name }}
+            </button>
+          </div>
+        </div>
+        <nav-pagination v-if="palletsTotalPages > 1" :page="pagination.page" :total="palletsTotalPages" @change="pagination.page = $event" />
+      </div>
+
+      <!-- Zones -->
+      <div v-if="currentScreen === 'zones'" class="screen">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="mb-0">Служебные зоны</h2>
+          <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="back">← Назад</button>
+            <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
+          </div>
+        </div>
+        <div class="row g-2">
+          <div v-for="zone in zones" :key="zone.name" class="col-6">
+            <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectShelf(zone)">
+              {{ zone.name }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pickup -->
+      <div v-if="currentScreen === 'pickup'" class="screen">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="mb-0">ПИКАП</h2>
+          <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="back">← Назад</button>
+            <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
+          </div>
+        </div>
+        <div class="row g-2">
+          <div v-for="pallet in pickupPallets" :key="pallet.name" class="col-6">
+            <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectShelf(pallet)">
+              {{ pallet.name }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barcode -->
+      <div v-if="currentScreen === 'barcode'" class="screen">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="mb-0">{{ currentBarcodeShelf ? currentBarcodeShelf.name : '' }}</h2>
+          <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="back" aria-label="Назад">← Назад</button>
+            <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠 На главную</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body text-center">
+            <div id="barcode-container" class="mb-3" role="img" aria-label="Штрих-код"></div>
+            <div v-if="barcodeError" class="alert alert-danger" role="alert" aria-live="assertive">
+              {{ barcodeError }}
+            </div>
+            <div class="d-flex flex-column gap-2">
+              <button class="btn btn-success btn-lg py-3" @click="downloadPNG" :disabled="!barcodePng" aria-label="Скачать штрих-код в формате PNG">Скачать PNG</button>
+              <button class="btn btn-primary btn-lg py-3" @click="home" aria-label="Вернуться на главную">Ещё штрих-код</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Update notification toast -->
+      <div v-if="updateAvailable" class="position-fixed bottom-0 start-50 translate-middle-x mb-3" style="z-index: 1050;">
+        <div class="card shadow border-0">
+          <div class="card-body py-2 px-3 d-flex align-items-center gap-2">
+            <span class="text-muted small">Доступно обновление</span>
+            <button class="btn btn-sm btn-primary" @click="updateApp" aria-label="Обновить приложение">Обновить</button>
+          </div>
+        </div>
+      </div>
+      <!-- Offline indicator -->
+      <div v-if="isOffline" class="position-fixed top-0 end-0 m-2" style="z-index: 1050;">
+        <span class="badge bg-warning text-dark" role="status" aria-label="Приложение работает в офлайн-режиме">Офлайн</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="data/shelves.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

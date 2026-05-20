@@ -12,6 +12,9 @@ function transliterate(text) {
 }
 
 // === BarcodeCache (IndexedDB) ===
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 дней
+const CACHE_MAX_ENTRIES = 100;
+
 class BarcodeCache {
   constructor() {
     this.db = null;
@@ -19,9 +22,15 @@ class BarcodeCache {
 
   async init() {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open('barcode-cache', 1);
+      const request = indexedDB.open('barcode-cache', 2);
       request.onupgradeneeded = (e) => {
-        e.target.result.createObjectStore('barcodes');
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('barcodes')) {
+          db.createObjectStore('barcodes');
+        }
+        if (!db.objectStoreNames.contains('metadata')) {
+          db.createObjectStore('metadata');
+        }
       };
       request.onsuccess = (e) => {
         this.db = e.target.result;
@@ -33,19 +42,68 @@ class BarcodeCache {
 
   async get(key) {
     if (!this.db) return undefined;
-    return new Promise((resolve, reject) => {
+    const entry = await new Promise((resolve, reject) => {
       const tx = this.db.transaction('barcodes', 'readonly');
       const req = tx.objectStore('barcodes').get(key);
       req.onsuccess = () => resolve(req.result || undefined);
       req.onerror = () => reject(req.error);
     });
+    if (!entry) return undefined;
+    if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
+      await this.delete(key);
+      return undefined;
+    }
+    entry.timestamp = Date.now();
+    await this.put(key, entry);
+    return entry.pngDataUrl;
   }
 
   async put(key, value) {
     if (!this.db) return;
+    const entry = { pngDataUrl: value, timestamp: Date.now() };
+    await new Promise((resolve, reject) => {
+      const tx = this.db.transaction('barcodes', 'readwrite');
+      tx.objectStore('barcodes').put(entry, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    await this.enforceLimit();
+  }
+
+  async delete(key) {
+    if (!this.db) return;
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction('barcodes', 'readwrite');
-      tx.objectStore('barcodes').put(value, key);
+      tx.objectStore('barcodes').delete(key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async enforceLimit() {
+    if (!this.db) return;
+    const allKeys = await new Promise((resolve, reject) => {
+      const tx = this.db.transaction('barcodes', 'readonly');
+      const req = tx.objectStore('barcodes').getAllKeys();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    if (allKeys.length <= CACHE_MAX_ENTRIES) return;
+    const entries = await new Promise((resolve, reject) => {
+      const tx = this.db.transaction('barcodes', 'readonly');
+      const req = tx.objectStore('barcodes').getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const sorted = allKeys.map((key, i) => ({ key, timestamp: entries[i].timestamp }))
+      .sort((a, b) => a.timestamp - b.timestamp);
+    const toDelete = sorted.slice(0, allKeys.length - CACHE_MAX_ENTRIES);
+    const tx = this.db.transaction('barcodes', 'readwrite');
+    const store = tx.objectStore('barcodes');
+    for (const item of toDelete) {
+      store.delete(item.key);
+    }
+    return new Promise((resolve, reject) => {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -59,8 +117,20 @@ class BarcodeGenerator {
   }
 
   async generate(barcode, shelfName) {
-    const cached = await this.cache.get(barcode);
-    if (cached) return cached;
+    const cachedPng = await this.cache.get(barcode);
+    if (cachedPng) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      JsBarcode(svg, barcode, {
+        format: 'CODE128',
+        width: 2,
+        height: 80,
+        displayValue: true,
+        text: shelfName,
+        fontSize: 16,
+        margin: 10
+      });
+      return { svg: new XMLSerializer().serializeToString(svg), pngDataUrl: cachedPng };
+    }
 
     if (typeof JsBarcode === 'undefined') {
       throw new Error('JsBarcode не загружен. Обновите страницу.');
@@ -107,6 +177,12 @@ class BarcodeGenerator {
 }
 
 // === Pagination ===
+function vibrate() {
+  if (navigator.vibrate) {
+    navigator.vibrate(30);
+  }
+}
+
 function paginate(items, page, perPage) {
   const totalPages = Math.ceil(items.length / perPage);
   const start = (page - 1) * perPage;
@@ -207,19 +283,26 @@ const app = Vue.createApp({
       currentScreen: 'welcome',
       navStack: [],
       shelves: [],
+      searchQuery: '',
       selectedSection: null,
       selectedRack: null,
       currentBarcodeShelf: null,
       barcodeSvg: '',
       barcodePng: null,
       barcodeError: null,
+      barcodeLoading: false,
       pagination: { page: 1, perPage: 12 },
       error: null,
       loading: true,
       stats: { totalSections: 0, totalShelves: 0, totalPallets: 0, totalZones: 0 },
+      dataVersion: '',
+      dataUpdatedAt: '',
+      isDark: false,
       updateAvailable: false,
       swRegistration: null,
-      isOffline: !navigator.onLine
+      isOffline: !navigator.onLine,
+      toastMessage: '',
+      toastTimeout: null
     };
   },
 
@@ -277,17 +360,44 @@ const app = Vue.createApp({
 
     pickupPallets() {
       return dataLayer.getSection('ПИКАП').pallets;
+    },
+
+    formattedDataDate() {
+      if (!this.dataUpdatedAt) return '';
+      try {
+        const d = new Date(this.dataUpdatedAt);
+        return d.toLocaleDateString('ru-RU', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch {
+        return this.dataUpdatedAt;
+      }
+    },
+
+    searchResults() {
+      const q = this.searchQuery.trim().toLowerCase();
+      if (q.length < 2) return [];
+      return dataLayer.shelves.filter(shelf =>
+        shelf.name.toLowerCase().includes(q) ||
+        (shelf.barcode && shelf.barcode.toLowerCase().includes(q))
+      ).slice(0, 50);
     }
   },
 
   methods: {
     push(screen) {
+      vibrate();
       this.navStack.push(this.currentScreen);
       this.pagination.page = 1;
       this.currentScreen = screen;
     },
 
     back() {
+      vibrate();
       if (this.navStack.length > 0) {
         this.currentScreen = this.navStack.pop();
         this.pagination.page = 1;
@@ -297,6 +407,7 @@ const app = Vue.createApp({
     },
 
     home() {
+      vibrate();
       this.navStack = [];
       this.currentScreen = 'welcome';
       this.selectedSection = null;
@@ -305,10 +416,13 @@ const app = Vue.createApp({
       this.barcodeSvg = '';
       this.barcodePng = null;
       this.barcodeError = null;
+      this.barcodeLoading = false;
       this.pagination.page = 1;
+      this.searchQuery = '';
     },
 
     selectSection(name) {
+      vibrate();
       this.selectedSection = name;
       this.pagination.page = 1;
       const data = dataLayer.getSection(name);
@@ -327,6 +441,7 @@ const app = Vue.createApp({
     },
 
     selectRack(rack) {
+      vibrate();
       this.selectedRack = rack;
       const rackLevels = this.racks.filter(r => r.number === rack.number);
       if (rackLevels.length <= 1) {
@@ -337,12 +452,18 @@ const app = Vue.createApp({
     },
 
     async selectShelf(shelf) {
+      vibrate();
       this.currentBarcodeShelf = shelf;
       this.barcodeError = null;
       this.barcodeSvg = '';
       this.barcodePng = null;
+      this.barcodeLoading = true;
       this.push('barcode');
-      await this.generateBarcode(shelf);
+      try {
+        await this.generateBarcode(shelf);
+      } finally {
+        this.barcodeLoading = false;
+      }
     },
 
     async generateBarcode(shelf) {
@@ -354,12 +475,6 @@ const app = Vue.createApp({
         const result = await barcodeGenerator.generate(barcode, shelf.name);
         this.barcodeSvg = result.svg;
         this.barcodePng = result.pngDataUrl;
-        this.$nextTick(() => {
-          const container = document.getElementById('barcode-container');
-          if (container) {
-            container.innerHTML = result.svg;
-          }
-        });
       } catch (e) {
         this.barcodeError = e.message || 'Ошибка генерации штрих-кода';
       }
@@ -373,6 +488,22 @@ const app = Vue.createApp({
       link.click();
     },
 
+    async copyBarcode() {
+      if (!this.currentBarcodeShelf || !this.currentBarcodeShelf.barcode) return;
+      try {
+        await navigator.clipboard.writeText(this.currentBarcodeShelf.barcode);
+        this.showToast('Штрих-код скопирован');
+      } catch {
+        this.showToast('Не удалось скопировать');
+      }
+    },
+
+    showToast(message) {
+      this.toastMessage = message;
+      if (this.toastTimeout) clearTimeout(this.toastTimeout);
+      this.toastTimeout = setTimeout(() => { this.toastMessage = ''; }, 2000);
+    },
+
     async retryLoad() {
       this.error = null;
       this.loading = true;
@@ -384,6 +515,8 @@ const app = Vue.createApp({
         await barcodeCache.init();
         await dataLayer.load();
         this.stats = dataLayer.getStats();
+        this.dataVersion = typeof DATA_VERSION !== 'undefined' ? DATA_VERSION : '';
+        this.dataUpdatedAt = typeof DATA_UPDATED_AT !== 'undefined' ? DATA_UPDATED_AT : '';
         this.loading = false;
       } catch (e) {
         this.loading = false;
@@ -395,10 +528,31 @@ const app = Vue.createApp({
       if (this.swRegistration && this.swRegistration.waiting) {
         this.swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
       }
+    },
+
+    toggleTheme() {
+      this.isDark = !this.isDark;
+      document.documentElement.setAttribute('data-theme', this.isDark ? 'dark' : 'light');
+      localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
+      document.querySelector('meta[name="theme-color"]').content = this.isDark ? '#1a1a2e' : '#0d6efd';
+    },
+
+    initTheme() {
+      const saved = localStorage.getItem('theme');
+      if (saved) {
+        this.isDark = saved === 'dark';
+      } else {
+        this.isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+      document.documentElement.setAttribute('data-theme', this.isDark ? 'dark' : 'light');
+      document.querySelector('meta[name="theme-color"]').content = this.isDark ? '#1a1a2e' : '#0d6efd';
     }
   },
 
   async mounted() {
+    const errDiv = document.getElementById('vue-load-error');
+    if (errDiv) errDiv.style.display = 'none';
+    this.initTheme();
     await this.init();
     window.addEventListener('online', () => { this.isOffline = false; });
     window.addEventListener('offline', () => { this.isOffline = true; });

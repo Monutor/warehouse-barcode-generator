@@ -1,3 +1,6 @@
+// Data version: 20260520000000 | Updated: 2026-05-20T00:00:00Z
+const DATA_VERSION = "20260520000000";
+const DATA_UPDATED_AT = "2026-05-20T00:00:00Z";
 const SHELVES = [
   {
     "name": "А-П01",

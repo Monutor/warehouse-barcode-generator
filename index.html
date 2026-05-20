@@ -8,10 +8,21 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <link href="css/style.css" rel="stylesheet">
 </head>
 <body>
+  <noscript>
+    <div style="max-width:600px;margin:2rem auto;padding:2rem;font-family:sans-serif;text-align:center;">
+      <h2>JavaScript отключён</h2>
+      <p>Для работы приложения необходим JavaScript. Включите его в настройках браузера и обновите страницу.</p>
+    </div>
+  </noscript>
+  <div id="vue-load-error" style="display:none;max-width:600px;margin:2rem auto;padding:2rem;font-family:sans-serif;text-align:center;">
+    <h2 style="color:#dc3545;">Не удалось загрузить приложение</h2>
+    <p>Проверьте подключение к интернету и обновите страницу.</p>
+    <button onclick="location.reload()" style="padding:0.75rem 2rem;font-size:1.1rem;background:#0d6efd;color:#fff;border:none;border-radius:0.5rem;cursor:pointer;">Обновить</button>
+  </div>
   <div id="app" class="min-vh-100 bg-light p-3">
     <div class="container py-3" v-if="loading">
       <div class="text-center py-5">
@@ -32,6 +43,11 @@
       <!-- Welcome -->
       <div v-if="currentScreen === 'welcome'" class="screen">
         <div class="text-center py-4">
+          <div class="d-flex justify-content-end mb-2">
+            <button class="btn btn-sm btn-outline-secondary" @click="toggleTheme" :aria-label="isDark ? 'Светлая тема' : 'Тёмная тема'">
+              {{ isDark ? '☀️' : '🌙' }}
+            </button>
+          </div>
           <h1 class="mb-3">Генератор штрих-кодов</h1>
           <p class="text-muted mb-4">Выберите полку для генерации штрих-кода</p>
           <div class="row g-3 mb-4 justify-content-center">
@@ -68,6 +84,7 @@
               </div>
             </div>
           </div>
+          <p v-if="dataUpdatedAt" class="text-muted small mb-3">Данные обновлены: {{ formattedDataDate }}</p>
           <button class="btn btn-primary btn-lg py-3 px-5" @click="push('sections')" aria-label="Начать работу">Начать</button>
         </div>
       </div>
@@ -78,18 +95,42 @@
           <h2 class="mb-0">Секции</h2>
           <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠 На главную</button>
         </div>
-        <div class="row g-3">
+        <div class="mb-3">
+          <input type="search" class="form-control form-control-lg" v-model="searchQuery" placeholder="Поиск по имени или штрих-коду..." aria-label="Поиск полок" autofocus>
+        </div>
+        <div v-if="searchQuery.trim().length >= 2" class="mb-3">
+          <div v-if="searchResults.length === 0" class="text-center text-muted py-3">
+            Ничего не найдено по запросу «{{ searchQuery }}»
+          </div>
+          <div v-else class="row g-2">
+            <div v-for="shelf in searchResults" :key="shelf.name" class="col-6 col-md-4">
+              <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectShelf(shelf)">
+                <span class="text-truncate-single">{{ shelf.name }}</span>
+                <small class="text-muted">{{ shelf.barcode }}</small>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div v-else>
+          <div class="row g-3">
           <div v-for="sec in sectionList" :key="sec.name" class="col-6 col-md-4">
             <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectSection(sec.name)">
-              {{ sec.label }}
-              <br><small class="text-muted">{{ sec.count }} полок</small>
+              <span class="text-truncate-single">{{ sec.label }}</span>
+              <small class="text-muted">{{ sec.count }} полок</small>
             </button>
           </div>
           <div class="col-6 col-md-4">
             <button class="btn btn-outline-warning btn-lg w-100 py-3" @click="selectSection('СЛУЖЕБНАЯ')">
-              Служебные зоны
-              <br><small class="text-muted">{{ zones.length }} зон</small>
+              <span class="text-truncate-single">Служебные зоны</span>
+              <small class="text-muted">{{ zones.length }} зон</small>
             </button>
+          </div>
+          <div class="col-6 col-md-4">
+            <button class="btn btn-outline-info btn-lg w-100 py-3" @click="selectSection('ПИКАП')">
+              <span class="text-truncate-single">ПИКАП</span>
+              <small class="text-muted">{{ pickupPallets.length }} поддонов</small>
+            </button>
+          </div>
           </div>
         </div>
       </div>
@@ -125,7 +166,7 @@
         <div class="row g-2">
           <div v-for="rack in paginatedRacks" :key="rack.name" class="col-6 col-md-4">
             <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectRack(rack)">
-              {{ rack.name }}
+              <span class="text-truncate-single">{{ rack.name }}</span>
             </button>
           </div>
         </div>
@@ -162,7 +203,7 @@
         <div class="row g-2">
           <div v-for="pallet in paginatedPallets" :key="pallet.name" class="col-6 col-md-4">
             <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectShelf(pallet)">
-              {{ pallet.name }}
+              <span class="text-truncate-single">{{ pallet.name }}</span>
             </button>
           </div>
         </div>
@@ -181,7 +222,7 @@
         <div class="row g-2">
           <div v-for="zone in zones" :key="zone.name" class="col-6">
             <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectShelf(zone)">
-              {{ zone.name }}
+              <span class="text-truncate-single">{{ zone.name }}</span>
             </button>
           </div>
         </div>
@@ -199,7 +240,7 @@
         <div class="row g-2">
           <div v-for="pallet in pickupPallets" :key="pallet.name" class="col-6">
             <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectShelf(pallet)">
-              {{ pallet.name }}
+              <span class="text-truncate-single">{{ pallet.name }}</span>
             </button>
           </div>
         </div>
@@ -216,14 +257,21 @@
         </div>
         <div class="card">
           <div class="card-body text-center">
-            <div id="barcode-container" class="mb-3" role="img" aria-label="Штрих-код"></div>
-            <div v-if="barcodeError" class="alert alert-danger" role="alert" aria-live="assertive">
-              {{ barcodeError }}
+            <div v-if="barcodeLoading" class="py-5">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-3 text-muted">Генерация штрих-кода...</p>
             </div>
-            <div class="d-flex flex-column gap-2">
-              <button class="btn btn-success btn-lg py-3" @click="downloadPNG" :disabled="!barcodePng" aria-label="Скачать штрих-код в формате PNG">Скачать PNG</button>
-              <button class="btn btn-primary btn-lg py-3" @click="home" aria-label="Вернуться на главную">Ещё штрих-код</button>
-            </div>
+            <template v-else>
+              <div v-html="barcodeSvg" class="mb-3" role="img" aria-label="Штрих-код"></div>
+              <div v-if="barcodeError" class="alert alert-danger" role="alert" aria-live="assertive">
+                {{ barcodeError }}
+              </div>
+              <div class="d-flex flex-column gap-2">
+                <button class="btn btn-info btn-lg py-3" @click="copyBarcode" :disabled="!currentBarcodeShelf" aria-label="Скопировать штрих-код">Скопировать штрих-код</button>
+                <button class="btn btn-success btn-lg py-3" @click="downloadPNG" :disabled="!barcodePng" aria-label="Скачать штрих-код в формате PNG">Скачать PNG</button>
+                <button class="btn btn-primary btn-lg py-3" @click="home" aria-label="Вернуться на главную">Ещё штрих-код</button>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -240,11 +288,26 @@
       <div v-if="isOffline" class="position-fixed top-0 end-0 m-2" style="z-index: 1050;">
         <span class="badge bg-warning text-dark" role="status" aria-label="Приложение работает в офлайн-режиме">Офлайн</span>
       </div>
+      <!-- Toast notification -->
+      <div v-if="toastMessage" class="position-fixed bottom-0 start-50 translate-middle-x mb-3" style="z-index: 1060;">
+        <div class="card shadow border-0 toast-card">
+          <div class="card-body py-2 px-3">
+            <span class="small">{{ toastMessage }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js" integrity="sha384-6pS1WSZJY7wOk6qQTa9C9U2W1/qzqL7iYoMil7qn9KFeN5fZDAwIExgCd7U5AH+X" crossorigin="anonymous"></script>
+  <script>
+    if (typeof Vue === 'undefined') {
+      document.getElementById('vue-load-error').style.display = 'block';
+      document.getElementById('app').style.display = 'none';
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js" integrity="sha384-Kk5SjBOKprEnGfyBWfD2zROFd1Cu8kwOXxG2GIhYPcoDL2rBJS9P8Ud1ZMy4412a" crossorigin="anonymous"></script>
   <script src="data/shelves.js"></script>
   <script src="js/app.js"></script>
 </body>

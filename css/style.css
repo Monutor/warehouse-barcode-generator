@@ -2,9 +2,72 @@
   box-sizing: border-box;
 }
 
+:root {
+  --bg-color: #f8f9fa;
+  --card-bg: #ffffff;
+  --text-color: #212529;
+  --text-muted: #6c757d;
+  --card-border: #dee2e6;
+  --btn-outline: #0d6efd;
+  --btn-outline-text: #0d6efd;
+  --btn-outline-hover-bg: #0d6efd;
+  --btn-outline-hover-text: #ffffff;
+  --alert-danger-bg: #f8d7da;
+  --alert-danger-text: #842029;
+  --alert-danger-border: #f5c2c7;
+  --spinner-color: #0d6efd;
+  --badge-bg: #ffc107;
+  --badge-text: #212529;
+  --card-shadow: none;
+  --input-bg: #ffffff;
+  --input-border: #ced4da;
+  --input-text: #212529;
+  --pagination-bg: #ffffff;
+  --pagination-border: #dee2e6;
+  --pagination-active-bg: #0d6efd;
+  --pagination-active-text: #ffffff;
+  --pagination-link-color: #0d6efd;
+  --toast-bg: #ffffff;
+  --toast-text: #6c757d;
+  --toast-border: #dee2e6;
+}
+
+[data-theme="dark"] {
+  --bg-color: #1a1a2e;
+  --card-bg: #16213e;
+  --text-color: #e0e0e0;
+  --text-muted: #a0a0a0;
+  --card-border: #2a2a4a;
+  --btn-outline: #6ea8fe;
+  --btn-outline-text: #6ea8fe;
+  --btn-outline-hover-bg: #6ea8fe;
+  --btn-outline-hover-text: #1a1a2e;
+  --alert-danger-bg: #4a1a1a;
+  --alert-danger-text: #f5a0a0;
+  --alert-danger-border: #6a2a2a;
+  --spinner-color: #6ea8fe;
+  --badge-bg: #6a5a00;
+  --badge-text: #e0e0e0;
+  --card-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  --input-bg: #16213e;
+  --input-border: #2a2a4a;
+  --input-text: #e0e0e0;
+  --pagination-bg: #16213e;
+  --pagination-border: #2a2a4a;
+  --pagination-active-bg: #6ea8fe;
+  --pagination-active-text: #1a1a2e;
+  --pagination-link-color: #6ea8fe;
+  --toast-bg: #16213e;
+  --toast-text: #a0a0a0;
+  --toast-border: #2a2a4a;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-tap-highlight-color: transparent;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .screen {
@@ -21,9 +84,10 @@ body {
   opacity: 0;
 }
 
-#barcode-container svg {
+.screen svg {
   max-width: 100%;
   height: auto;
+  width: 100%;
 }
 
 .btn-lg {
@@ -32,6 +96,14 @@ body {
 
 .card {
   border-radius: 0.75rem;
+  background-color: var(--card-bg);
+  border-color: var(--card-border);
+  box-shadow: var(--card-shadow);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.card-body {
+  color: var(--text-color);
 }
 
 .btn:hover .text-muted,
@@ -43,4 +115,107 @@ body {
 .btn-lg {
   font-size: 1.15rem;
   line-height: 1.2;
+
+  @media screen and (max-width: 428px) {
+    font-size: 1.05rem;
+  }
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+.text-primary {
+  color: var(--btn-outline) !important;
+}
+
+.alert-danger {
+  background-color: var(--alert-danger-bg);
+  color: var(--alert-danger-text);
+  border-color: var(--alert-danger-border);
+}
+
+.btn-outline-primary {
+  color: var(--btn-outline-text);
+  border-color: var(--btn-outline);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--btn-outline-hover-bg);
+  border-color: var(--btn-outline-hover-bg);
+  color: var(--btn-outline-hover-text);
+}
+
+.btn-outline-warning {
+  color: #ffc107;
+  border-color: #ffc107;
+}
+
+.btn-outline-warning:hover {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+
+[data-theme="dark"] .btn-outline-warning:hover {
+  color: #1a1a2e;
+}
+
+.bg-light {
+  background-color: var(--bg-color) !important;
+}
+
+.form-control {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+}
+
+.form-control::placeholder {
+  color: var(--text-muted);
+}
+
+.form-control:focus {
+  background-color: var(--input-bg);
+  color: var(--input-text);
+}
+
+.page-link {
+  color: var(--pagination-link-color);
+  background-color: var(--pagination-bg);
+  border-color: var(--pagination-border);
+}
+
+.page-item.active .page-link {
+  background-color: var(--pagination-active-bg);
+  border-color: var(--pagination-active-bg);
+  color: var(--pagination-active-text);
+}
+
+.page-item.disabled .page-link {
+  background-color: var(--pagination-bg);
+  border-color: var(--pagination-border);
+  color: var(--text-muted);
+}
+
+.badge.bg-warning {
+  background-color: var(--badge-bg) !important;
+  color: var(--badge-text) !important;
+}
+
+#app {
+  transition: background-color 0.3s ease;
+}
+
+.toast-card {
+  background-color: var(--toast-bg);
+  border-color: var(--toast-border);
+  color: var(--toast-text);
+}
+
+.text-truncate-single {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
 }

@@ -581,6 +581,13 @@ const app = Vue.createApp({
       this.scannedCode = null;
       this.scanResult = null;
       try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        stream.getTracks().forEach(track => track.stop());
+      } catch (e) {
+        this.scannerError = 'Нет доступа к камере. Разрешите доступ в настройках браузера.';
+        return;
+      }
+      try {
         const scanner = new Html5Qrcode('scanner-reader');
         this.scannerInstance = scanner;
         const cameras = await Html5Qrcode.getCameras();

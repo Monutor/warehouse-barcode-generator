@@ -213,6 +213,27 @@ body {
   color: var(--toast-text);
 }
 
+.scanner-reader {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #000;
+}
+
+.scanner-reader video {
+  border-radius: 0.75rem;
+}
+
+#scanner-reader img[alt="Info icon"] {
+  display: none;
+}
+
+#scanner-reader a {
+  display: none;
+}
+
 .text-truncate-single {
   white-space: nowrap;
   overflow: hidden;

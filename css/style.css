@@ -216,14 +216,24 @@ body {
 .scanner-reader {
   width: 100%;
   max-width: 400px;
+  height: 300px;
   margin: 0 auto;
   border-radius: 0.75rem;
   overflow: hidden;
   background: #000;
+  position: relative;
 }
 
 .scanner-reader video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   border-radius: 0.75rem;
+}
+
+#scanner-reader > div {
+  width: 100%;
+  height: 100%;
 }
 
 #scanner-reader img[alt="Info icon"] {

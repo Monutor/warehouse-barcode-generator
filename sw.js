@@ -1,5 +1,5 @@
-const CACHE_NAME = 'barcode-app-v3';
-const CDN_CACHE_NAME = 'barcode-cdn-v3';
+const CACHE_NAME = 'barcode-app-v4';
+const CDN_CACHE_NAME = 'barcode-cdn-v4';
 
 const ASSETS = [
   '/warehouse-barcode-generator/index.html',
@@ -12,7 +12,8 @@ const ASSETS = [
 const CDN_ASSETS = [
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
   'https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js',
-  'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js'
+  'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js',
+  'https://cdn.jsdelivr.net/npm/html5-qrcode@3.2.0/html5-qrcode.min.js'
 ];
 
 self.addEventListener('install', (event) => {

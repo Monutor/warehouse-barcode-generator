@@ -314,7 +314,12 @@ const app = Vue.createApp({
       swRegistration: null,
       isOffline: !navigator.onLine,
       toastMessage: '',
-      toastTimeout: null
+      toastTimeout: null,
+      scannerActive: false,
+      scannerError: null,
+      scannedCode: null,
+      scanResult: null,
+      scannerInstance: null
     };
   },
 
@@ -410,6 +415,9 @@ const app = Vue.createApp({
 
     back() {
       vibrate();
+      if (this.currentScreen === 'scanner') {
+        this.stopScanner();
+      }
       if (this.navStack.length > 0) {
         this.currentScreen = this.navStack.pop();
         this.pagination.page = 1;
@@ -420,6 +428,7 @@ const app = Vue.createApp({
 
     home() {
       vibrate();
+      this.stopScanner();
       this.navStack = [];
       this.currentScreen = 'welcome';
       this.selectedSection = null;
@@ -431,6 +440,9 @@ const app = Vue.createApp({
       this.barcodeLoading = false;
       this.pagination.page = 1;
       this.searchQuery = '';
+      this.scannerError = null;
+      this.scannedCode = null;
+      this.scanResult = null;
     },
 
     selectSection(name) {
@@ -558,6 +570,94 @@ const app = Vue.createApp({
       }
       document.documentElement.setAttribute('data-theme', this.isDark ? 'dark' : 'light');
       document.querySelector('meta[name="theme-color"]').content = this.isDark ? '#1a1a2e' : '#0d6efd';
+    },
+
+    async startScanner() {
+      if (typeof Html5Qrcode === 'undefined') {
+        this.scannerError = 'Библиотека сканера не загружена. Обновите страницу.';
+        return;
+      }
+      this.scannerError = null;
+      this.scannedCode = null;
+      this.scanResult = null;
+      try {
+        const scanner = new Html5Qrcode('scanner-reader');
+        this.scannerInstance = scanner;
+        const cameras = await Html5Qrcode.getCameras();
+        if (!cameras || cameras.length === 0) {
+          this.scannerError = 'Нет доступа к камере. Разрешите доступ в настройках браузера.';
+          return;
+        }
+        const rearCamera = cameras.find(c => c.label.toLowerCase().includes('back')) || cameras[cameras.length - 1];
+        await scanner.start(
+          rearCamera.id,
+          { fps: 10, qrbox: { width: 250, height: 150 } },
+          (decodedText) => this.onScanSuccess(decodedText),
+          () => {}
+        );
+        this.scannerActive = true;
+      } catch (e) {
+        this.scannerError = 'Нет доступа к камере. Разрешите доступ в настройках браузера.';
+      }
+    },
+
+    async stopScanner() {
+      if (this.scannerInstance && this.scannerActive) {
+        try {
+          await this.scannerInstance.stop();
+          this.scannerInstance.clear();
+        } catch {}
+        this.scannerInstance = null;
+        this.scannerActive = false;
+      }
+    },
+
+    async onScanSuccess(decodedText) {
+      await this.stopScanner();
+      this.scannedCode = decodedText;
+      const shelf = dataLayer.findByBarcode(decodedText);
+      if (shelf) {
+        this.currentBarcodeShelf = shelf;
+        this.barcodeError = null;
+        this.barcodeSvg = '';
+        this.barcodePng = null;
+        this.barcodeLoading = true;
+        this.navStack.push('scanner');
+        this.currentScreen = 'barcode';
+        try {
+          await this.generateBarcode(shelf);
+        } finally {
+          this.barcodeLoading = false;
+        }
+      } else {
+        this.scanResult = 'not-found';
+        this.navStack.push('scanner');
+        this.currentScreen = 'scan-not-found';
+      }
+    },
+
+    async copyScannedCode() {
+      if (!this.scannedCode) return;
+      try {
+        await navigator.clipboard.writeText(this.scannedCode);
+        this.showToast('Код скопирован');
+      } catch {
+        this.showToast('Не удалось скопировать');
+      }
+    },
+
+    scanAgain() {
+      this.scannedCode = null;
+      this.scanResult = null;
+      this.currentScreen = 'scanner';
+    }
+  },
+
+  watch: {
+    currentScreen(newScreen) {
+      if (newScreen === 'scanner' && !this.scannerActive && !this.scannerError) {
+        this.startScanner();
+      }
     }
   },
 

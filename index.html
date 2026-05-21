@@ -86,6 +86,9 @@
           </div>
           <p v-if="dataUpdatedAt" class="text-muted small mb-3">Данные обновлены: {{ formattedDataDate }}</p>
           <button class="btn btn-primary btn-lg py-3 px-5" @click="push('sections')" aria-label="Начать работу">Начать</button>
+          <div class="mt-3">
+            <button class="btn btn-outline-secondary btn-lg py-3 px-5" @click="push('scanner')" aria-label="Сканировать штрих-код">📷 Сканировать штрих-код</button>
+          </div>
         </div>
       </div>
 
@@ -93,7 +96,10 @@
       <div v-if="currentScreen === 'sections'" class="screen">
         <div class="d-flex align-items-center justify-content-between mb-3">
           <h2 class="mb-0">Секции</h2>
-          <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠 На главную</button>
+          <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="push('scanner')" aria-label="Сканировать">📷</button>
+            <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠 На главную</button>
+          </div>
         </div>
         <div class="mb-3">
           <input type="search" class="form-control form-control-lg" v-model="searchQuery" placeholder="Поиск по имени или штрих-коду..." aria-label="Поиск полок" autofocus>
@@ -140,6 +146,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
           <h2 class="mb-0">{{ selectedSection }} — Тип хранения</h2>
           <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="push('scanner')" aria-label="Сканировать">📷</button>
             <button class="btn btn-sm btn-outline-secondary" @click="back" aria-label="Назад">← Назад</button>
             <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
           </div>
@@ -159,6 +166,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
           <h2 class="mb-0">{{ selectedSection }} — Стеллажи</h2>
           <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="push('scanner')" aria-label="Сканировать">📷</button>
             <button class="btn btn-sm btn-outline-secondary" @click="back" aria-label="Назад">← Назад</button>
             <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
           </div>
@@ -178,6 +186,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
           <h2 class="mb-0">{{ selectedRack.name }} — Уровни</h2>
           <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="push('scanner')" aria-label="Сканировать">📷</button>
             <button class="btn btn-sm btn-outline-secondary" @click="back" aria-label="Назад">← Назад</button>
             <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
           </div>
@@ -196,6 +205,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
           <h2 class="mb-0">{{ selectedSection }} — Поддоны</h2>
           <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="push('scanner')" aria-label="Сканировать">📷</button>
             <button class="btn btn-sm btn-outline-secondary" @click="back">← Назад</button>
             <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
           </div>
@@ -215,6 +225,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
           <h2 class="mb-0">Служебные зоны</h2>
           <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="push('scanner')" aria-label="Сканировать">📷</button>
             <button class="btn btn-sm btn-outline-secondary" @click="back">← Назад</button>
             <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
           </div>
@@ -233,6 +244,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
           <h2 class="mb-0">ПИКАП</h2>
           <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="push('scanner')" aria-label="Сканировать">📷</button>
             <button class="btn btn-sm btn-outline-secondary" @click="back">← Назад</button>
             <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
           </div>
@@ -251,6 +263,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
           <h2 class="mb-0">{{ currentBarcodeShelf ? currentBarcodeShelf.name : '' }}</h2>
           <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="push('scanner')" aria-label="Сканировать">📷</button>
             <button class="btn btn-sm btn-outline-secondary" @click="back" aria-label="Назад">← Назад</button>
             <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠 На главную</button>
           </div>
@@ -275,6 +288,45 @@
           </div>
         </div>
       </div>
+
+      <!-- Scanner -->
+      <div v-if="currentScreen === 'scanner'" class="screen">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="mb-0">Сканирование</h2>
+          <button class="btn btn-sm btn-outline-secondary" @click="back" aria-label="Отмена">✕ Отмена</button>
+        </div>
+        <div v-if="scannerError" class="card border-danger">
+          <div class="card-body text-center">
+            <p class="card-text text-danger">{{ scannerError }}</p>
+            <button class="btn btn-danger" @click="back">Назад</button>
+          </div>
+        </div>
+        <div v-else>
+          <div id="scanner-reader" class="scanner-reader"></div>
+          <p class="text-center text-muted mt-3">Наведите камеру на штрих-код</p>
+        </div>
+      </div>
+
+      <!-- Scan Not Found -->
+      <div v-if="currentScreen === 'scan-not-found'" class="screen">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="mb-0">Результат сканирования</h2>
+          <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠 На главную</button>
+        </div>
+        <div class="card border-warning">
+          <div class="card-body text-center">
+            <h5 class="card-title text-warning">⚠ Штрих-код не найден в базе</h5>
+            <p class="card-text text-muted mt-2">Отсканированный код:</p>
+            <code class="d-block fs-4 mb-3">{{ scannedCode }}</code>
+            <div class="d-flex flex-column gap-2">
+              <button class="btn btn-outline-secondary btn-lg py-3" @click="copyScannedCode">Скопировать код</button>
+              <button class="btn btn-warning btn-lg py-3" @click="scanAgain">Сканировать ещё</button>
+              <button class="btn btn-outline-secondary btn-lg py-3" @click="home">На главную</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Update notification toast -->
       <div v-if="updateAvailable" class="position-fixed bottom-0 start-50 translate-middle-x mb-3" style="z-index: 1050;">
         <div class="card shadow border-0">

@@ -252,6 +252,18 @@ class DataLayer {
     return this.nameIndex.get(name) || null;
   }
 
+  findByBarcode(code) {
+    if (!code) return null;
+    const normalized = code.trim();
+    for (const shelf of this.shelves) {
+      if (shelf.barcode === normalized) return shelf;
+    }
+    for (const shelf of this.shelves) {
+      if (shelf.name === normalized) return shelf;
+    }
+    return null;
+  }
+
   getStats() {
     const sections = new Set();
     let totalShelves = 0, totalPallets = 0, totalZones = 0;

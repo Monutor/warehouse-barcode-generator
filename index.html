@@ -267,8 +267,7 @@
                 {{ barcodeError }}
               </div>
               <div class="d-flex flex-column gap-2">
-                <button class="btn btn-info btn-lg py-3" @click="copyBarcode" :disabled="!currentBarcodeShelf" aria-label="Скопировать штрих-код">Скопировать штрих-код</button>
-                <button class="btn btn-outline-secondary btn-lg py-3" @click="copyBarcodeText" :disabled="!currentBarcodeShelf" aria-label="Скопировать значение штрих-кода как текст">Скопировать как текст</button>
+                <button class="btn btn-info btn-lg py-3" @click="copyBarcode" :disabled="!currentBarcodeShelf" aria-label="Скопировать значение штрих-кода">Скопировать код</button>
                 <button class="btn btn-success btn-lg py-3" @click="downloadPNG" :disabled="!barcodePng" aria-label="Скачать штрих-код в формате PNG">Скачать PNG</button>
                 <button class="btn btn-primary btn-lg py-3" @click="home" aria-label="Вернуться на главную">Ещё штрих-код</button>
               </div>

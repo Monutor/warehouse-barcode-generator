@@ -498,6 +498,16 @@ const app = Vue.createApp({
       }
     },
 
+    async copyBarcodeText() {
+      if (!this.currentBarcodeShelf || !this.currentBarcodeShelf.name) return;
+      try {
+        await navigator.clipboard.writeText(this.currentBarcodeShelf.name);
+        this.showToast('Название полки скопировано');
+      } catch {
+        this.showToast('Не удалось скопировать');
+      }
+    },
+
     showToast(message) {
       this.toastMessage = message;
       if (this.toastTimeout) clearTimeout(this.toastTimeout);

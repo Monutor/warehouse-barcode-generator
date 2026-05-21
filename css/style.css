@@ -222,6 +222,20 @@ body {
   overflow: hidden;
   background: #000;
   position: relative;
+  border: 3px solid #fff;
+}
+
+.scanner-reader::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.8);
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 10;
 }
 
 .scanner-reader video {

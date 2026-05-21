@@ -647,6 +647,7 @@ const app = Vue.createApp({
     },
 
     scanAgain() {
+      this.scannerError = null;
       this.scannedCode = null;
       this.scanResult = null;
       this.currentScreen = 'scanner';

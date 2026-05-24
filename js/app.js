@@ -315,11 +315,7 @@ const app = Vue.createApp({
       isOffline: !navigator.onLine,
       toastMessage: '',
       toastTimeout: null,
-      scannerActive: false,
-      scannerError: null,
-      scannedCode: null,
-      scanResult: null,
-      scannerInstance: null
+
     };
   },
 
@@ -398,10 +394,14 @@ const app = Vue.createApp({
     searchResults() {
       const q = this.searchQuery.trim().toLowerCase();
       if (q.length < 2) return [];
-      return dataLayer.shelves.filter(shelf =>
-        shelf.name.toLowerCase().includes(q) ||
-        (shelf.barcode && shelf.barcode.toLowerCase().includes(q))
-      ).slice(0, 50);
+      const normalizedQ = q.replace(/[.\-\s]/g, '');
+      return dataLayer.shelves.filter(shelf => {
+        const name = shelf.name.toLowerCase();
+        if (name.includes(q)) return true;
+        if (shelf.barcode && shelf.barcode.toLowerCase().includes(q)) return true;
+        if (name.replace(/[.\-\s]/g, '').includes(normalizedQ)) return true;
+        return false;
+      }).slice(0, 50);
     }
   },
 
@@ -415,9 +415,6 @@ const app = Vue.createApp({
 
     back() {
       vibrate();
-      if (this.currentScreen === 'scanner') {
-        this.stopScanner();
-      }
       if (this.navStack.length > 0) {
         this.currentScreen = this.navStack.pop();
         this.pagination.page = 1;
@@ -428,7 +425,6 @@ const app = Vue.createApp({
 
     home() {
       vibrate();
-      this.stopScanner();
       this.navStack = [];
       this.currentScreen = 'welcome';
       this.selectedSection = null;
@@ -440,9 +436,6 @@ const app = Vue.createApp({
       this.barcodeLoading = false;
       this.pagination.page = 1;
       this.searchQuery = '';
-      this.scannerError = null;
-      this.scannedCode = null;
-      this.scanResult = null;
     },
 
     selectSection(name) {
@@ -572,118 +565,6 @@ const app = Vue.createApp({
       document.querySelector('meta[name="theme-color"]').content = this.isDark ? '#1a1a2e' : '#0d6efd';
     },
 
-    async startScanner() {
-      if (typeof Html5Qrcode === 'undefined') {
-        this.scannerError = 'Библиотека сканера не загружена. Обновите страницу.';
-        return;
-      }
-      this.scannerError = null;
-      this.scannedCode = null;
-      this.scanResult = null;
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        stream.getTracks().forEach(track => track.stop());
-      } catch (e) {
-        this.scannerError = 'Нет доступа к камере. Разрешите доступ в настройках браузера.';
-        return;
-      }
-      try {
-        const scanner = new Html5Qrcode('scanner-reader');
-        this.scannerInstance = scanner;
-        const cameras = await Html5Qrcode.getCameras();
-        if (!cameras || cameras.length === 0) {
-          this.scannerError = 'Нет доступа к камере. Разрешите доступ в настройках браузера.';
-          return;
-        }
-        const rearCamera = cameras.find(c => c.label.toLowerCase().includes('back')) || cameras[cameras.length - 1];
-        await scanner.start(
-          rearCamera.id,
-          {
-            fps: 15,
-            formatsToSupport: [
-              Html5QrcodeSupportedFormats.CODE_128,
-              Html5QrcodeSupportedFormats.CODE_39,
-              Html5QrcodeSupportedFormats.CODE_93,
-              Html5QrcodeSupportedFormats.CODABAR,
-              Html5QrcodeSupportedFormats.EAN_13,
-              Html5QrcodeSupportedFormats.EAN_8,
-              Html5QrcodeSupportedFormats.UPC_A,
-              Html5QrcodeSupportedFormats.UPC_E,
-              Html5QrcodeSupportedFormats.ITF,
-              Html5QrcodeSupportedFormats.QR_CODE,
-              Html5QrcodeSupportedFormats.DATA_MATRIX,
-              Html5QrcodeSupportedFormats.PDF_417,
-              Html5QrcodeSupportedFormats.AZTEC
-            ]
-          },
-          (decodedText) => this.onScanSuccess(decodedText),
-          () => {}
-        );
-        this.scannerActive = true;
-      } catch (e) {
-        this.scannerError = 'Нет доступа к камере. Разрешите доступ в настройках браузера.';
-      }
-    },
-
-    async stopScanner() {
-      if (this.scannerInstance && this.scannerActive) {
-        try {
-          await this.scannerInstance.stop();
-          this.scannerInstance.clear();
-        } catch {}
-        this.scannerInstance = null;
-        this.scannerActive = false;
-      }
-    },
-
-    async onScanSuccess(decodedText) {
-      await this.stopScanner();
-      this.scannedCode = decodedText;
-      const shelf = dataLayer.findByBarcode(decodedText);
-      if (shelf) {
-        this.currentBarcodeShelf = shelf;
-        this.barcodeError = null;
-        this.barcodeSvg = '';
-        this.barcodePng = null;
-        this.barcodeLoading = true;
-        this.navStack.push('scanner');
-        this.currentScreen = 'barcode';
-        try {
-          await this.generateBarcode(shelf);
-        } finally {
-          this.barcodeLoading = false;
-        }
-      } else {
-        this.scanResult = 'not-found';
-        this.navStack.push('scanner');
-        this.currentScreen = 'scan-not-found';
-      }
-    },
-
-    async copyScannedCode() {
-      if (!this.scannedCode) return;
-      try {
-        await navigator.clipboard.writeText(this.scannedCode);
-        this.showToast('Код скопирован');
-      } catch {
-        this.showToast('Не удалось скопировать');
-      }
-    },
-
-    scanAgain() {
-      this.scannerError = null;
-      this.scannedCode = null;
-      this.scanResult = null;
-      this.currentScreen = 'scanner';
-    }
-  },
-
-  watch: {
-    currentScreen(newScreen) {
-      if (newScreen === 'scanner' && !this.scannerActive && !this.scannerError) {
-        this.startScanner();
-      }
-    }
   },
 
   async mounted() {

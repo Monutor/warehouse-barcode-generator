@@ -213,51 +213,6 @@ body {
   color: var(--toast-text);
 }
 
-.scanner-reader {
-  width: 100%;
-  max-width: 400px;
-  height: 300px;
-  margin: 0 auto;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  background: #000;
-  position: relative;
-  border: 3px solid #fff;
-}
-
-.scanner-reader::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 10%;
-  right: 10%;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.8);
-  transform: translateY(-50%);
-  pointer-events: none;
-  z-index: 10;
-}
-
-.scanner-reader video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 0.75rem;
-}
-
-#scanner-reader > div {
-  width: 100%;
-  height: 100%;
-}
-
-#scanner-reader img[alt="Info icon"] {
-  display: none;
-}
-
-#scanner-reader a {
-  display: none;
-}
-
 .text-truncate-single {
   white-space: nowrap;
   overflow: hidden;

@@ -3,42 +3,82 @@ import json
 import os
 from datetime import datetime, timezone
 
-def convert_csv_to_js(csv_path, js_path):
+def parse_main_cell(name, barcode):
+    parts = name.split('-')
+    if len(parts) == 1:
+        return None
+    section = parts[0]
+    second = parts[1]
+    has_level = len(parts) == 3
+    if second.startswith('С') or second.startswith('П'):
+        stype = second[0]
+        number = second[1:]
+    elif second.isdigit() or (second[0].isdigit() and len(second) > 0):
+        stype = 'С' if has_level else 'П'
+        number = second
+    else:
+        return None
+    level = parts[2] if has_level else None
+    return {
+        'name': name,
+        'barcode': barcode,
+        'section': section,
+        'type': stype,
+        'number': number,
+        'level': level
+    }
+
+def convert_csv_to_json(csv_path, json_path):
     shelves = []
-    with open(csv_path, 'r', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
+    with open(csv_path, 'r', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f, delimiter=';')
         for row in reader:
-            shelf = {
-                'name': row['name'],
-                'barcode': row['barcode'],
-                'section': row['section'],
-                'type': row['type'],
-                'number': row['number'],
-                'level': row['level'] if row['level'] else None
-            }
-            shelves.append(shelf)
+            code = row['Код зоны']
+            cell = row['Ячейка']
+            barcode = row['ШК']
+            if code == 'Main':
+                shelf = parse_main_cell(cell, barcode)
+                if shelf:
+                    shelves.append(shelf)
+            elif code == 'Pickup':
+                number = cell.split('-')[-1] if '-' in cell else cell
+                shelves.append({
+                    'name': cell,
+                    'barcode': barcode,
+                    'section': 'ПИКАП',
+                    'type': 'П',
+                    'number': number,
+                    'level': None
+                })
+            else:
+                shelves.append({
+                    'name': cell,
+                    'barcode': barcode,
+                    'section': 'СЛУЖЕБНАЯ',
+                    'type': 'З',
+                    'number': cell.upper(),
+                    'level': None
+                })
 
     now = datetime.now(timezone.utc)
     version = now.strftime('%Y%m%d%H%M%S')
     updated_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-    js_content = (
-        f'// Data version: {version} | Updated: {updated_at}\n'
-        f'const DATA_VERSION = "{version}";\n'
-        f'const DATA_UPDATED_AT = "{updated_at}";\n'
-        f'const SHELVES = ' + json.dumps(shelves, ensure_ascii=False, indent=2) + ';\n'
-    )
+    os.makedirs(os.path.dirname(json_path), exist_ok=True)
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump({
+            'version': version,
+            'updatedAt': updated_at,
+            'shelves': shelves
+        }, f, ensure_ascii=False, indent=2)
 
-    os.makedirs(os.path.dirname(js_path), exist_ok=True)
-    with open(js_path, 'w', encoding='utf-8') as f:
-        f.write(js_content)
-
-    print(f'Converted {len(shelves)} shelves to {js_path}')
+    print(f'Converted {len(shelves)} shelves to {json_path}')
     print(f'Version: {version} | Updated: {updated_at}')
 
 if __name__ == '__main__':
     script_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(script_dir)
-    csv_path = os.path.join(root_dir, 'warehouse_data.csv')
-    js_path = os.path.join(root_dir, 'data', 'shelves.js')
-    convert_csv_to_js(csv_path, js_path)
+    convert_csv_to_json(
+        os.path.join(root_dir, 'warehouse_data.csv'),
+        os.path.join(root_dir, 'data', 'shelves.json')
+    )

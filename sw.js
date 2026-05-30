@@ -5,7 +5,7 @@ const ASSETS = [
   '/warehouse-barcode-generator/index.html',
   '/warehouse-barcode-generator/css/style.css',
   '/warehouse-barcode-generator/js/app.js',
-  '/warehouse-barcode-generator/data/shelves.js',
+  '/warehouse-barcode-generator/data/shelves.json',
   '/warehouse-barcode-generator/manifest.json'
 ];
 

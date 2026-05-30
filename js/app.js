@@ -195,6 +195,14 @@ function paginate(items, page, perPage) {
   };
 }
 
+function debounce(fn, delay) {
+  let timer;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
 // === DataLayer ===
 class DataLayer {
   constructor() {
@@ -204,11 +212,14 @@ class DataLayer {
   }
 
   async load() {
-    if (typeof SHELVES === 'undefined') {
-      throw new Error('Данные не загружены');
+    const resp = await fetch('data/shelves.json');
+    if (!resp.ok) {
+      throw new Error('Не удалось загрузить данные');
     }
-    this.shelves = SHELVES;
+    const data = await resp.json();
+    this.shelves = data.shelves;
     this.buildIndexes();
+    return data;
   }
 
   buildIndexes() {
@@ -296,6 +307,7 @@ const app = Vue.createApp({
       navStack: [],
       shelves: [],
       searchQuery: '',
+      searchInput: '',
       selectedSection: null,
       selectedRack: null,
       currentBarcodeShelf: null,
@@ -405,7 +417,17 @@ const app = Vue.createApp({
     }
   },
 
+  created() {
+    this.debouncedSearch = debounce((val) => {
+      this.searchQuery = val;
+    }, 250);
+  },
+
   methods: {
+    onSearchInput(e) {
+      this.searchInput = e.target.value;
+      this.debouncedSearch(e.target.value);
+    },
     push(screen) {
       vibrate();
       this.navStack.push(this.currentScreen);
@@ -436,6 +458,7 @@ const app = Vue.createApp({
       this.barcodeLoading = false;
       this.pagination.page = 1;
       this.searchQuery = '';
+      this.searchInput = '';
     },
 
     selectSection(name) {
@@ -530,10 +553,10 @@ const app = Vue.createApp({
     async init() {
       try {
         await barcodeCache.init();
-        await dataLayer.load();
+        const data = await dataLayer.load();
         this.stats = dataLayer.getStats();
-        this.dataVersion = typeof DATA_VERSION !== 'undefined' ? DATA_VERSION : '';
-        this.dataUpdatedAt = typeof DATA_UPDATED_AT !== 'undefined' ? DATA_UPDATED_AT : '';
+        this.dataVersion = data.version || '';
+        this.dataUpdatedAt = data.updatedAt || '';
         this.loading = false;
       } catch (e) {
         this.loading = false;

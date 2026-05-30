@@ -30,6 +30,8 @@
   --toast-bg: #ffffff;
   --toast-text: #6c757d;
   --toast-border: #dee2e6;
+  --skeleton-bg: #e0e0e0;
+  --skeleton-shimmer: #f0f0f0;
 }
 
 [data-theme="dark"] {
@@ -60,6 +62,8 @@
   --toast-bg: #16213e;
   --toast-text: #a0a0a0;
   --toast-border: #2a2a4a;
+  --skeleton-bg: #2a2a4a;
+  --skeleton-shimmer: #3a3a5a;
 }
 
 body {
@@ -218,4 +222,43 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   display: block;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--skeleton-bg) 25%, var(--skeleton-shimmer) 50%, var(--skeleton-bg) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-card {
+  height: 80px;
+  margin-bottom: 0.75rem;
+}
+
+.skeleton-text {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-title {
+  height: 1.75rem;
+  width: 60%;
+  margin: 0 auto 0.75rem;
+}
+
+.skeleton-search {
+  height: 48px;
+  margin-bottom: 1rem;
+}
+
+.skeleton-stats {
+  height: 2.5rem;
+  width: 70%;
+  margin: 1rem auto 0;
 }

@@ -18,8 +18,8 @@ const CDN_ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     Promise.all([
-      caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)),
-      caches.open(CDN_CACHE_NAME).then((cache) => cache.addAll(CDN_ASSETS))
+      caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).catch(() => {}),
+      caches.open(CDN_CACHE_NAME).then((cache) => cache.addAll(CDN_ASSETS)).catch(() => {})
     ])
   );
   self.skipWaiting();

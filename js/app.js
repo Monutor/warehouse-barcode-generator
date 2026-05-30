@@ -325,20 +325,15 @@ const barcodeGenerator = new BarcodeGenerator(barcodeCache);
 const app = Vue.createApp({
   data() {
     return {
-      currentScreen: 'welcome',
-      navStack: [],
-      shelves: [],
       searchQuery: '',
       searchInput: '',
-      selectedSection: null,
-      selectedRack: null,
+      activeSection: null,
       currentBarcodeShelf: null,
       barcodeSvg: '',
       barcodePng: null,
       barcodeError: null,
       barcodeLoading: false,
       printLoading: false,
-      pagination: { page: 1, perPage: 12 },
       error: null,
       loading: true,
       stats: { totalSections: 0, totalShelves: 0, totalPallets: 0, totalZones: 0 },
@@ -352,61 +347,30 @@ const app = Vue.createApp({
       toastTimeout: null,
       favorites: [],
       printQueue: [],
+      sectionVisibleCount: {},
+      enteredSection: null,
+      selectedShelfLevels: null, // shelf name whose levels we're viewing
+      barcodeModalOpen: false,
     };
   },
 
   computed: {
+    // Visible pickup pallets (respects "show more")
+    visiblePickupPallets() {
+      const all = this.pickupPallets;
+      const visible = this.sectionVisibleCount['ПИКАП'] || 8;
+      if (visible >= all.length) return all;
+      return all.slice(0, visible);
+    },
+
+    // Check if pickup has more items to show
+    pickupHasMore() {
+      const visible = this.sectionVisibleCount['ПИКАП'] || 8;
+      return visible < this.pickupPallets.length;
+    },
+
     sectionList() {
       return dataLayer.getSections();
-    },
-
-    currentSectionData() {
-      return dataLayer.getSection(this.selectedSection);
-    },
-
-    hasRacks() {
-      return this.currentSectionData.racks.length > 0;
-    },
-
-    hasPallets() {
-      return this.currentSectionData.pallets.length > 0;
-    },
-
-    parentRacks() {
-      return this.currentSectionData.racks
-        .filter(r => r.level === null)
-        .sort((a, b) => parseInt(a.number, 10) - parseInt(b.number, 10));
-    },
-
-    racks() {
-      return this.currentSectionData.racks;
-    },
-
-    racksTotalPages() {
-      return Math.ceil(this.parentRacks.length / this.pagination.perPage);
-    },
-
-    paginatedRacks() {
-      return paginate(this.parentRacks, this.pagination.page, this.pagination.perPage).items;
-    },
-
-    pallets() {
-      return this.currentSectionData.pallets;
-    },
-
-    palletsTotalPages() {
-      return Math.ceil(this.pallets.length / this.pagination.perPage);
-    },
-
-    paginatedPallets() {
-      return paginate(this.pallets, this.pagination.page, this.pagination.perPage).items;
-    },
-
-    levels() {
-      if (!this.selectedRack) return [];
-      return this.racks.filter(r => r.level !== null && r.number === this.selectedRack.number).sort((a, b) => {
-        return (a.level || '').localeCompare(b.level || '', 'ru', { numeric: true });
-      });
     },
 
     zones() {
@@ -415,6 +379,55 @@ const app = Vue.createApp({
 
     pickupPallets() {
       return dataLayer.getSection('ПИКАП').pallets;
+    },
+
+    // When in a section: racks (level === null) and pallets
+    sectionRacks() {
+      if (!this.enteredSection || this.selectedShelfLevels) return [];
+      const data = dataLayer.getSection(this.enteredSection);
+      return data.racks
+        .filter(r => r.level === null)
+        .sort((a, b) => parseInt(a.number, 10) - parseInt(b.number, 10));
+    },
+
+    sectionPallets() {
+      if (!this.enteredSection || this.selectedShelfLevels) return [];
+      const data = dataLayer.getSection(this.enteredSection);
+      return data.pallets;
+    },
+
+    visibleSectionPallets() {
+      const all = this.sectionPallets;
+      const visible = this.sectionVisibleCount[this.enteredSection + '_pallets'] || 8;
+      if (visible >= all.length) return all;
+      return all.slice(0, visible);
+    },
+
+    sectionPalletHasMore() {
+      const visible = this.sectionVisibleCount[this.enteredSection + '_pallets'] || 8;
+      return visible < this.sectionPallets.length;
+    },
+
+    // Zones for СЛУЖЕБНАЯ section
+    sectionZones() {
+      if (!this.enteredSection || this.selectedShelfLevels) return [];
+      if (this.enteredSection !== 'СЛУЖЕБНАЯ') return [];
+      const data = dataLayer.getSection('СЛУЖЕБНАЯ');
+      return data.zones;
+    },
+
+    // When a rack is selected: its shelves (level !== null)
+    shelfLevels() {
+      if (!this.selectedShelfLevels) return [];
+      const data = dataLayer.getSection(dataLayer.findShelf(this.selectedShelfLevels)?.section || '');
+      return data.racks
+        .filter(r => r.level !== null && r.name.startsWith(this.selectedShelfLevels))
+        .sort((a, b) => parseInt(a.level, 10) - parseInt(b.level, 10));
+    },
+
+    selectedShelfData() {
+      if (!this.selectedShelfLevels) return null;
+      return dataLayer.findShelf(this.selectedShelfLevels);
     },
 
     favoriteCount() {
@@ -460,7 +473,7 @@ const app = Vue.createApp({
         if (name.replace(/[.\-\s]/g, '').includes(normalizedQ)) return true;
         return false;
       }).slice(0, 50);
-    }
+    },
   },
 
   created() {
@@ -474,86 +487,87 @@ const app = Vue.createApp({
       this.searchInput = e.target.value;
       this.debouncedSearch(e.target.value);
     },
-    push(screen) {
-      vibrate();
-      this.navStack.push(this.currentScreen);
-      this.pagination.page = 1;
-      this.currentScreen = screen;
+
+    getSectionRacks(sectionName) {
+      const data = dataLayer.getSection(sectionName);
+      return data.racks
+        .filter(r => r.level === null)
+        .sort((a, b) => parseInt(a.number, 10) - parseInt(b.number, 10));
     },
 
-    back() {
-      vibrate();
-      if (this.navStack.length > 0) {
-        this.currentScreen = this.navStack.pop();
-        this.pagination.page = 1;
-      } else {
-        this.home();
-      }
+    getSectionRacksVisible(sectionName) {
+      const all = this.getSectionRacks(sectionName);
+      const visible = this.sectionVisibleCount[sectionName] || 8;
+      if (visible >= all.length) return all;
+      return all.slice(0, visible);
     },
 
-    home() {
+    getSectionHasMore(sectionName) {
+      const all = this.getSectionRacks(sectionName);
+      const visible = this.sectionVisibleCount[sectionName] || 8;
+      return visible < all.length;
+    },
+
+    getSectionTotalCount(sectionName) {
+      return this.getSectionRacks(sectionName).length;
+    },
+
+    showSection(name) {
       vibrate();
-      this.navStack = [];
-      this.currentScreen = 'welcome';
-      this.selectedSection = null;
-      this.selectedRack = null;
-      this.currentBarcodeShelf = null;
-      this.barcodeSvg = '';
-      this.barcodePng = null;
-      this.barcodeError = null;
-      this.barcodeLoading = false;
-      this.pagination.page = 1;
-      this.searchQuery = '';
-      this.searchInput = '';
+      this.activeSection = name === this.activeSection ? null : name;
     },
 
     selectSection(name) {
       vibrate();
-      this.selectedSection = name;
-      this.pagination.page = 1;
-      const data = dataLayer.getSection(name);
+      this.activeSection = name;
+    },
 
-      if (name === 'СЛУЖЕБНАЯ') {
-        this.push('zones');
-      } else if (name === 'ПИКАП') {
-        this.push('pickup');
-      } else if (data.racks.length > 0 && data.pallets.length > 0) {
-        this.push('storageType');
-      } else if (data.racks.length > 0) {
-        this.push('racks');
-      } else if (data.pallets.length > 0) {
-        this.push('pallets');
+    enterSection(name) {
+      vibrate();
+      this.enteredSection = name;
+      this.activeSection = null;
+      this.selectedShelfLevels = null;
+      localStorage.setItem('lastSection', name);
+    },
+
+    backFromSection() {
+      vibrate();
+      if (this.selectedShelfLevels) {
+        this.selectedShelfLevels = null;
+      } else {
+        this.enteredSection = null;
       }
     },
 
-    selectRack(rack) {
+    selectShelfForLevels(shelfName) {
       vibrate();
-      this.selectedRack = rack;
-      if (rack.level !== null) {
-        this.selectShelf(rack);
+      this.selectedShelfLevels = shelfName;
+    },
+
+    loadMore(sectionName) {
+      vibrate();
+      const key = sectionName + '_pallets';
+      const currentPallets = this.sectionVisibleCount[key];
+      if (currentPallets !== undefined && this.enteredSection === sectionName) {
+        const total = this.sectionPallets.length;
+        const step = Math.min(12, total - currentPallets);
+        if (step > 0) {
+          this.sectionVisibleCount[key] = currentPallets + step;
+        }
         return;
       }
-      const rackLevels = this.racks.filter(r => r.number === rack.number);
-      if (rackLevels.length <= 1) {
-        this.selectShelf(rack);
+      const current = this.sectionVisibleCount[sectionName] || 8;
+      const data = dataLayer.getSection(sectionName);
+      let total;
+      if (sectionName === 'ПИКАП') {
+        total = data.pallets.length;
       } else {
-        this.push('levels');
+        const allRacks = data.racks.filter(r => r.level === null).sort((a, b) => parseInt(a.number, 10) - parseInt(b.number, 10));
+        total = allRacks.length;
       }
-    },
-
-    async selectShelf(shelf) {
-      vibrate();
-      this.currentBarcodeShelf = shelf;
-      this.barcodeError = null;
-      this.barcodeSvg = '';
-      this.barcodePng = null;
-      this.barcodeLoading = true;
-      this.push('barcode');
-      try {
-        await this.generateBarcode(shelf);
-      } finally {
-        this.barcodeLoading = false;
-      }
+      // Load next batch of 12, or remaining if less
+      const step = Math.min(12, total - current);
+      this.sectionVisibleCount[sectionName] = current + step;
     },
 
     async generateBarcode(shelf) {
@@ -568,6 +582,25 @@ const app = Vue.createApp({
       } catch (e) {
         this.barcodeError = e.message || 'Ошибка генерации штрих-кода';
       }
+    },
+
+    async selectShelf(shelf) {
+      vibrate();
+      this.currentBarcodeShelf = shelf;
+      this.barcodeError = null;
+      this.barcodeSvg = '';
+      this.barcodePng = null;
+      this.barcodeLoading = true;
+      this.barcodeModalOpen = true;
+      try {
+        await this.generateBarcode(shelf);
+      } finally {
+        this.barcodeLoading = false;
+      }
+    },
+
+    closeBarcodeModal() {
+      this.barcodeModalOpen = false;
     },
 
     downloadPNG() {
@@ -694,30 +727,55 @@ const app = Vue.createApp({
 
     selectPrint() {
       vibrate();
-      this.push('print');
+      this.activeSection = 'PRINT';
+      this.enteredSection = null;
+      this.selectedShelfLevels = null;
     },
 
     selectFavorite() {
       vibrate();
-      this.push('favorites');
+      this.activeSection = 'FAVORITES';
+      this.enteredSection = null;
+      this.selectedShelfLevels = null;
+    },
+
+    backFromView() {
+      vibrate();
+      if (this.activeSection === 'FAVORITES' || this.activeSection === 'PRINT') {
+        this.activeSection = null;
+      } else {
+        this.backFromSection();
+      }
+    },
+
+    removeFromPrintQueue(name) {
+      const idx = this.printQueue.indexOf(name);
+      if (idx !== -1) {
+        this.printQueue.splice(idx, 1);
+        savePrintQueue(this.printQueue);
+      }
+    },
+
+    removeFromFavorites(name) {
+      const idx = this.favorites.indexOf(name);
+      if (idx !== -1) {
+        this.favorites.splice(idx, 1);
+        saveFavorites(this.favorites);
+      }
     },
 
     toggleTheme() {
       this.isDark = !this.isDark;
       document.documentElement.setAttribute('data-theme', this.isDark ? 'dark' : 'light');
       localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
-      document.querySelector('meta[name="theme-color"]').content = this.isDark ? '#1a1a2e' : '#0d6efd';
+      document.querySelector('meta[name="theme-color"]').content = this.isDark ? '#121212' : '#d48a1c';
     },
 
     initTheme() {
       const saved = localStorage.getItem('theme');
-      if (saved) {
-        this.isDark = saved === 'dark';
-      } else {
-        this.isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      }
+      this.isDark = saved ? saved === 'dark' : true;
       document.documentElement.setAttribute('data-theme', this.isDark ? 'dark' : 'light');
-      document.querySelector('meta[name="theme-color"]').content = this.isDark ? '#1a1a2e' : '#0d6efd';
+      document.querySelector('meta[name="theme-color"]').content = this.isDark ? '#121212' : '#d48a1c';
     },
 
   },
@@ -727,8 +785,35 @@ const app = Vue.createApp({
     if (errDiv) errDiv.style.display = 'none';
     this.initTheme();
     await this.init();
+
+    // Restore last section unless navigating to favorites/print
+    const hash = window.location.hash;
+    if (!hash || hash === '#') {
+      const lastSection = localStorage.getItem('lastSection');
+      if (lastSection && dataLayer.getSection(lastSection)) {
+        this.enteredSection = lastSection;
+      }
+    }
+
     window.addEventListener('online', () => { this.isOffline = false; });
     window.addEventListener('offline', () => { this.isOffline = true; });
+
+    // Close barcode modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.barcodeModalOpen) {
+        this.closeBarcodeModal();
+      }
+    });
+
+    // Handle hash navigation for favorites/print
+    const handleHash = () => {
+      if (window.location.hash === '#print') {
+        this.selectPrint();
+      } else if (window.location.hash === '#favorites') {
+        this.selectFavorite();
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
   }
 });
 

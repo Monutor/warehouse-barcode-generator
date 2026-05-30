@@ -109,15 +109,30 @@
           </div>
           <div v-else class="row g-2">
             <div v-for="shelf in searchResults" :key="shelf.name" class="col-6 col-md-4">
-              <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectShelf(shelf)">
+              <button class="btn btn-outline-primary btn-lg w-100 py-3 d-flex justify-content-between align-items-center" @click="selectShelf(shelf)">
                 <span class="text-truncate-single">{{ shelf.name }}</span>
-                <small class="text-muted">{{ shelf.barcode }}</small>
+                <span class="action-icons ms-2">
+                  <span class="action-icon" @click.stop="togglePrintQueue(shelf.name)">{{ isInPrintQueue(shelf.name) ? '🖨️' : '🖨' }}</span>
+                  <span class="action-icon" @click.stop="toggleFavorite(shelf.name)">{{ isFavorite(shelf.name) ? '★' : '☆' }}</span>
+                </span>
               </button>
             </div>
           </div>
         </div>
         <div v-else>
           <div class="row g-3">
+          <div :class="'col-6 col-md-4'">
+            <button class="btn btn-outline-warning btn-lg w-100 py-3" @click="selectFavorite">
+              <span class="text-truncate-single">⭐ Избранное</span>
+              <small class="text-muted">{{ favoriteCount }} полок</small>
+            </button>
+          </div>
+          <div class="col-6 col-md-4">
+            <button class="btn btn-outline-warning btn-lg w-100 py-3" @click="selectPrint">
+              <span class="text-truncate-single">🖨️ Печать</span>
+              <small class="text-muted">{{ printCount }} штрихов</small>
+            </button>
+          </div>
           <div v-for="sec in sectionList" :key="sec.name" class="col-6 col-md-4">
             <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectSection(sec.name)">
               <span class="text-truncate-single">{{ sec.label }}</span>
@@ -170,8 +185,12 @@
         </div>
         <div class="row g-2">
           <div v-for="rack in paginatedRacks" :key="rack.name" class="col-6 col-md-4">
-            <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectRack(rack)">
+            <button class="btn btn-outline-primary btn-lg w-100 py-3 d-flex justify-content-between align-items-center" @click="selectRack(rack)">
               <span class="text-truncate-single">{{ rack.name }}</span>
+              <span class="action-icons ms-2">
+                <span class="action-icon" @click.stop="togglePrintQueue(rack.name)">{{ isInPrintQueue(rack.name) ? '🖨️' : '🖨' }}</span>
+                <span class="action-icon" @click.stop="toggleFavorite(rack.name)">{{ isFavorite(rack.name) ? '★' : '☆' }}</span>
+              </span>
             </button>
           </div>
         </div>
@@ -181,7 +200,7 @@
       <!-- Levels -->
       <div v-if="currentScreen === 'levels'" class="screen">
         <div class="d-flex align-items-center justify-content-between mb-3">
-          <h2 class="mb-0">{{ selectedRack.name }} — Уровни</h2>
+          <h2 class="mb-0">{{ selectedRack.name }} — Полки</h2>
           <div class="d-flex gap-1">
             <button class="btn btn-sm btn-outline-secondary" @click="back" aria-label="Назад">← Назад</button>
             <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
@@ -190,7 +209,7 @@
         <div class="row g-2">
           <div v-for="lvl in levels" :key="lvl.level" class="col-6">
             <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectShelf(lvl)">
-              Уровень {{ lvl.level }}
+              Полка {{ lvl.level }}
             </button>
           </div>
         </div>
@@ -207,8 +226,12 @@
         </div>
         <div class="row g-2">
           <div v-for="pallet in paginatedPallets" :key="pallet.name" class="col-6 col-md-4">
-            <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="selectShelf(pallet)">
+            <button class="btn btn-outline-primary btn-lg w-100 py-3 d-flex justify-content-between align-items-center" @click="selectShelf(pallet)">
               <span class="text-truncate-single">{{ pallet.name }}</span>
+              <span class="action-icons ms-2">
+                <span class="action-icon" @click.stop="togglePrintQueue(pallet.name)">{{ isInPrintQueue(pallet.name) ? '🖨️' : '🖨' }}</span>
+                <span class="action-icon" @click.stop="toggleFavorite(pallet.name)">{{ isFavorite(pallet.name) ? '★' : '☆' }}</span>
+              </span>
             </button>
           </div>
         </div>
@@ -251,6 +274,58 @@
         </div>
       </div>
 
+      <!-- Favorites -->
+      <div v-if="currentScreen === 'favorites'" class="screen">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="mb-0">⭐ Избранное</h2>
+          <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="back">← Назад</button>
+            <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
+          </div>
+        </div>
+        <div v-if="favoriteCount === 0" class="text-center text-muted py-5">
+          <p>Нет избранных полок.</p>
+          <p>Нажмите ☆ на карточке полки, чтобы добавить.</p>
+        </div>
+        <div v-else class="row g-2">
+          <div v-for="shelf in favoriteShelves" :key="shelf.name" class="col-6 col-md-4">
+            <button class="btn btn-outline-primary btn-lg w-100 py-3 d-flex justify-content-between align-items-center" @click="selectShelf(shelf)">
+              <span class="text-truncate-single">{{ shelf.name }}</span>
+              <span class="star-icon ms-2" @click.stop="toggleFavorite(shelf.name)">{{ isFavorite(shelf.name) ? '★' : '☆' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Print -->
+      <div v-if="currentScreen === 'print'" class="screen">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h2 class="mb-0">🖨️ Печать — {{ printCount }} штрихов</h2>
+          <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" @click="back">← Назад</button>
+            <button class="btn btn-sm btn-outline-secondary" @click="home" aria-label="На главную">🏠</button>
+          </div>
+        </div>
+        <div v-if="printCount === 0" class="text-center text-muted py-5">
+          <p>Нет полок для печати.</p>
+          <p>Нажмите 🖨️ на карточке полки, чтобы добавить.</p>
+        </div>
+        <div v-else>
+          <button class="btn btn-success btn-lg w-100 mb-3 py-3" @click="printAll" :disabled="printLoading">🖨️ Печать PDF</button>
+          <div class="row g-2">
+            <div v-for="shelf in printShelves" :key="shelf.name" class="col-6 col-md-4">
+              <button class="btn btn-outline-primary btn-lg w-100 py-3 d-flex justify-content-between align-items-center" @click="selectShelf(shelf)">
+                <span class="text-truncate-single">{{ shelf.name }}</span>
+                <span class="action-icons ms-2">
+                  <span class="action-icon" @click.stop="togglePrintQueue(shelf.name)">🖨️</span>
+                  <span class="action-icon" @click.stop="toggleFavorite(shelf.name)">{{ isFavorite(shelf.name) ? '★' : '☆' }}</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Barcode -->
       <div v-if="currentScreen === 'barcode'" class="screen">
         <div class="d-flex align-items-center justify-content-between mb-3">
@@ -274,6 +349,7 @@
               <div class="d-flex flex-column gap-2">
                 <button class="btn btn-info btn-lg py-3" @click="copyBarcode" :disabled="!currentBarcodeShelf" aria-label="Скопировать значение штрих-кода">Скопировать код</button>
                 <button class="btn btn-success btn-lg py-3" @click="downloadPNG" :disabled="!barcodePng" aria-label="Скачать штрих-код в формате PNG">Скачать PNG</button>
+                <button class="btn btn-warning btn-lg py-3" @click="printOne(currentBarcodeShelf)" :disabled="!currentBarcodeShelf">🖨️ Печать</button>
                 <button class="btn btn-primary btn-lg py-3" @click="home" aria-label="Вернуться на главную">Ещё штрих-код</button>
               </div>
             </template>
@@ -305,6 +381,9 @@
     </div>
     </div>
   </div>
+
+  <!-- Print area (hidden, shown only during window.print) -->
+  <div id="print-area" class="print-area"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js" integrity="sha384-6pS1WSZJY7wOk6qQTa9C9U2W1/qzqL7iYoMil7qn9KFeN5fZDAwIExgCd7U5AH+X" crossorigin="anonymous"></script>
   <script>

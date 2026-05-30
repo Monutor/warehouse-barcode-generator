@@ -195,6 +195,28 @@ function paginate(items, page, perPage) {
   };
 }
 
+function loadFavorites() {
+  try {
+    const data = localStorage.getItem('favorites');
+    return data ? JSON.parse(data) : [];
+  } catch { return []; }
+}
+
+function saveFavorites(names) {
+  localStorage.setItem('favorites', JSON.stringify(names));
+}
+
+function loadPrintQueue() {
+  try {
+    const data = localStorage.getItem('printQueue');
+    return data ? JSON.parse(data) : [];
+  } catch { return []; }
+}
+
+function savePrintQueue(names) {
+  localStorage.setItem('printQueue', JSON.stringify(names));
+}
+
 function debounce(fn, delay) {
   let timer;
   return function(...args) {
@@ -315,6 +337,7 @@ const app = Vue.createApp({
       barcodePng: null,
       barcodeError: null,
       barcodeLoading: false,
+      printLoading: false,
       pagination: { page: 1, perPage: 12 },
       error: null,
       loading: true,
@@ -327,7 +350,8 @@ const app = Vue.createApp({
       isOffline: !navigator.onLine,
       toastMessage: '',
       toastTimeout: null,
-
+      favorites: [],
+      printQueue: [],
     };
   },
 
@@ -348,16 +372,22 @@ const app = Vue.createApp({
       return this.currentSectionData.pallets.length > 0;
     },
 
+    parentRacks() {
+      return this.currentSectionData.racks
+        .filter(r => r.level === null)
+        .sort((a, b) => parseInt(a.number, 10) - parseInt(b.number, 10));
+    },
+
     racks() {
       return this.currentSectionData.racks;
     },
 
     racksTotalPages() {
-      return Math.ceil(this.racks.length / this.pagination.perPage);
+      return Math.ceil(this.parentRacks.length / this.pagination.perPage);
     },
 
     paginatedRacks() {
-      return paginate(this.racks, this.pagination.page, this.pagination.perPage).items;
+      return paginate(this.parentRacks, this.pagination.page, this.pagination.perPage).items;
     },
 
     pallets() {
@@ -374,7 +404,7 @@ const app = Vue.createApp({
 
     levels() {
       if (!this.selectedRack) return [];
-      return this.racks.filter(r => r.number === this.selectedRack.number).sort((a, b) => {
+      return this.racks.filter(r => r.level !== null && r.number === this.selectedRack.number).sort((a, b) => {
         return (a.level || '').localeCompare(b.level || '', 'ru', { numeric: true });
       });
     },
@@ -385,6 +415,22 @@ const app = Vue.createApp({
 
     pickupPallets() {
       return dataLayer.getSection('ПИКАП').pallets;
+    },
+
+    favoriteCount() {
+      return this.favorites.length;
+    },
+
+    favoriteShelves() {
+      return dataLayer.shelves.filter(s => this.favorites.includes(s.name));
+    },
+
+    printCount() {
+      return this.printQueue.length;
+    },
+
+    printShelves() {
+      return dataLayer.shelves.filter(s => this.printQueue.includes(s.name));
     },
 
     formattedDataDate() {
@@ -483,6 +529,10 @@ const app = Vue.createApp({
     selectRack(rack) {
       vibrate();
       this.selectedRack = rack;
+      if (rack.level !== null) {
+        this.selectShelf(rack);
+        return;
+      }
       const rackLevels = this.racks.filter(r => r.number === rack.number);
       if (rackLevels.length <= 1) {
         this.selectShelf(rack);
@@ -538,6 +588,48 @@ const app = Vue.createApp({
       }
     },
 
+    async printAll() {
+      vibrate();
+      const shelves = this.printShelves;
+      if (shelves.length === 0) return;
+      this.printLoading = true;
+      this.showToast('Генерация штрихов для печати...');
+      await this.renderPrintPages(shelves);
+      this.printLoading = false;
+    },
+
+    async printOne(shelf) {
+      vibrate();
+      await this.renderPrintPages([shelf]);
+    },
+
+    async renderPrintPages(shelves) {
+      const printArea = document.getElementById('print-area');
+      if (!printArea) return;
+      printArea.innerHTML = '';
+      let html = '<div class="print-page">';
+      let idx = 0;
+      const perPage = 12;
+      for (const shelf of shelves) {
+        try {
+          let barcode = shelf.barcode || transliterate(shelf.name);
+          const result = await barcodeGenerator.generate(barcode, shelf.name);
+          html += '<div class="print-label">' + result.svg + '</div>';
+          idx++;
+          if (idx % perPage === 0 && idx < shelves.length) {
+            html += '</div><div class="print-page">';
+          }
+        } catch (e) {
+          // skip individual errors
+        }
+      }
+      html += '</div>';
+      printArea.innerHTML = html;
+      await new Promise(r => setTimeout(r, 200));
+      window.print();
+      printArea.innerHTML = '';
+    },
+
     showToast(message) {
       this.toastMessage = message;
       if (this.toastTimeout) clearTimeout(this.toastTimeout);
@@ -557,6 +649,8 @@ const app = Vue.createApp({
         this.stats = dataLayer.getStats();
         this.dataVersion = data.version || '';
         this.dataUpdatedAt = data.updatedAt || '';
+        this.favorites = loadFavorites();
+        this.printQueue = loadPrintQueue();
         this.loading = false;
       } catch (e) {
         this.loading = false;
@@ -568,6 +662,44 @@ const app = Vue.createApp({
       if (this.swRegistration && this.swRegistration.waiting) {
         this.swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
       }
+    },
+
+    isFavorite(name) {
+      return this.favorites.includes(name);
+    },
+
+    toggleFavorite(name) {
+      const idx = this.favorites.indexOf(name);
+      if (idx === -1) {
+        this.favorites.push(name);
+      } else {
+        this.favorites.splice(idx, 1);
+      }
+      saveFavorites(this.favorites);
+    },
+
+    isInPrintQueue(name) {
+      return this.printQueue.includes(name);
+    },
+
+    togglePrintQueue(name) {
+      const idx = this.printQueue.indexOf(name);
+      if (idx === -1) {
+        this.printQueue.push(name);
+      } else {
+        this.printQueue.splice(idx, 1);
+      }
+      savePrintQueue(this.printQueue);
+    },
+
+    selectPrint() {
+      vibrate();
+      this.push('print');
+    },
+
+    selectFavorite() {
+      vibrate();
+      this.push('favorites');
     },
 
     toggleTheme() {

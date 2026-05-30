@@ -217,6 +217,24 @@ body {
   color: var(--toast-text);
 }
 
+.action-icons {
+  display: inline-flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.action-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.action-icon:hover {
+  transform: scale(1.2);
+  transition: transform 0.15s ease;
+}
+
 .text-truncate-single {
   white-space: nowrap;
   overflow: hidden;
@@ -261,4 +279,54 @@ body {
   height: 2.5rem;
   width: 70%;
   margin: 1rem auto 0;
+}
+
+/* ===== Print styles ===== */
+.print-area {
+  display: none;
+}
+
+@media print {
+  body > *:not(.print-area) {
+    display: none !important;
+  }
+  .print-area {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+}
+
+.print-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 12mm 15mm;
+  box-sizing: border-box;
+  page-break-after: always;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8mm 0;
+}
+
+.print-label {
+  width: 50%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.print-label svg {
+  max-width: 80mm;
+  height: auto;
+}
+
+.print-label-name {
+  font-size: 10pt;
+  font-family: sans-serif;
+  margin-top: 2mm;
 }

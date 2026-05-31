@@ -156,7 +156,7 @@
                   </span>
                 </div>
               </div>
-              <button v-if="getSectionHasMore(enteredSection)" class="btn btn-outline-primary mt-3 w-100 py-2" @click="loadMore(enteredSection)">Показать ещё</button>
+              <button v-if="getSectionHasMore(enteredSection)" class="btn btn-outline-primary mt-3 w-100 py-2" @click="loadMore(enteredSection, 'racks')">Показать ещё</button>
             </template>
 
             <!-- Зоны для СЛУЖЕБНАЯ -->
@@ -185,14 +185,17 @@
                   </span>
                 </div>
               </div>
-              <button v-if="sectionPalletHasMore" class="btn btn-outline-primary mt-3 w-100 py-2" @click="loadMore(enteredSection)">Показать ещё</button>
+              <button v-if="sectionPalletHasMore" class="btn btn-outline-primary mt-3 w-100 py-2" @click="loadMore(enteredSection, 'pallets')">Показать ещё</button>
             </template>
           </template>
         </template>
 
         <!-- Favorites view -->
         <template v-if="activeSection === 'FAVORITES'">
-          <div class="section-divider mb-3">⭐ Избранное</div>
+          <div class="section-divider mb-3 d-flex justify-content-between align-items-center">
+            <span>⭐ Избранное</span>
+            <button v-if="favoriteShelves.length > 0" class="btn btn-sm btn-outline-danger" @click="clearFavorites">✕ Очистить всё</button>
+          </div>
           <div v-if="favoriteShelves.length === 0" class="text-center text-muted py-3">Нет избранных стеллажей</div>
           <div v-else class="shelf-grid mb-4">
             <div v-for="shelf in favoriteShelves" :key="shelf.name" class="shelf-card" @click="selectShelf(shelf)">
@@ -207,7 +210,10 @@
 
         <!-- Print queue view -->
         <template v-if="activeSection === 'PRINT'">
-          <div class="section-divider mb-3">🖨️ Печать</div>
+          <div class="section-divider mb-3 d-flex justify-content-between align-items-center">
+            <span>🖨️ Печать</span>
+            <button v-if="printShelves.length > 0" class="btn btn-sm btn-outline-danger" @click="clearPrintQueue">✕ Очистить всё</button>
+          </div>
           <div v-if="printShelves.length === 0" class="text-center text-muted py-3">Очередь печати пуста</div>
           <div v-else>
             <div class="shelf-grid mb-4">
@@ -265,7 +271,13 @@
           </div>
         </div>
         <div class="barcode-modal-footer" v-if="!barcodeLoading && !barcodeError">
-          <button type="button" class="btn btn-outline-primary barcode-btn-download" @click="downloadPNG">⬇ Скачать</button>
+          <div class="d-flex align-items-center gap-1">
+            <div class="barcode-format-toggle btn-group btn-group-sm" role="group">
+              <button type="button" class="btn btn-outline-primary" :class="{'active': downloadFormat === 'png'}" @click="downloadFormat = 'png'">PNG</button>
+              <button type="button" class="btn btn-outline-primary" :class="{'active': downloadFormat === 'jpg'}" @click="downloadFormat = 'jpg'">JPG</button>
+            </div>
+            <button type="button" class="btn btn-outline-primary barcode-btn-download" @click="downloadBarcode">⬇ Скачать</button>
+          </div>
           <button type="button" class="btn btn-primary barcode-btn-print" @click="printOne(currentBarcodeShelf)">🖨 Печать</button>
         </div>
       </div>

@@ -117,21 +117,6 @@ class BarcodeGenerator {
   }
 
   async generate(barcode, shelfName) {
-    const cachedPng = await this.cache.get(barcode);
-    if (cachedPng) {
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      JsBarcode(svg, barcode, {
-        format: 'CODE128',
-        width: 2,
-        height: 80,
-        displayValue: true,
-        text: shelfName,
-        fontSize: 16,
-        margin: 10
-      });
-      return { svg: new XMLSerializer().serializeToString(svg), pngDataUrl: cachedPng };
-    }
-
     if (typeof JsBarcode === 'undefined') {
       throw new Error('JsBarcode не загружен. Обновите страницу.');
     }
@@ -152,6 +137,8 @@ class BarcodeGenerator {
     }
 
     const svgString = new XMLSerializer().serializeToString(svg);
+    const cachedPng = await this.cache.get(barcode);
+
     const canvas = document.createElement('canvas');
     const img = new Image();
     const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
@@ -166,9 +153,14 @@ class BarcodeGenerator {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         URL.revokeObjectURL(url);
-        const pngDataUrl = canvas.toDataURL('image/png');
-        this.cache.put(barcode, pngDataUrl).catch(() => {});
-        resolve({ svg: svgString, pngDataUrl });
+        const jpgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+        if (cachedPng) {
+          resolve({ svg: svgString, pngDataUrl: cachedPng, jpgDataUrl });
+        } else {
+          const pngDataUrl = canvas.toDataURL('image/png');
+          this.cache.put(barcode, pngDataUrl).catch(() => {});
+          resolve({ svg: svgString, pngDataUrl, jpgDataUrl });
+        }
       };
       img.onerror = () => reject(new Error('Ошибка рендеринга штрих-кода'));
       img.src = url;
@@ -231,6 +223,7 @@ class DataLayer {
     this.shelves = [];
     this.nameIndex = new Map();
     this.sectionIndex = new Map();
+    this.searchItems = [];
   }
 
   async load() {
@@ -241,7 +234,17 @@ class DataLayer {
     const data = await resp.json();
     this.shelves = data.shelves;
     this.buildIndexes();
+    this.buildSearchIndex();
     return data;
+  }
+
+  buildSearchIndex() {
+    this.searchItems = this.shelves.map(s => ({
+      shelf: s,
+      nameLower: s.name.toLowerCase(),
+      barcodeLower: (s.barcode || '').toLowerCase(),
+      nameStripped: s.name.toLowerCase().replace(/[.\-\s]/g, ''),
+    }));
   }
 
   buildIndexes() {
@@ -331,6 +334,8 @@ const app = Vue.createApp({
       currentBarcodeShelf: null,
       barcodeSvg: '',
       barcodePng: null,
+      barcodeJpg: null,
+      downloadFormat: 'png',
       barcodeError: null,
       barcodeLoading: false,
       printLoading: false,
@@ -355,20 +360,6 @@ const app = Vue.createApp({
   },
 
   computed: {
-    // Visible pickup pallets (respects "show more")
-    visiblePickupPallets() {
-      const all = this.pickupPallets;
-      const visible = this.sectionVisibleCount['ПИКАП'] || 8;
-      if (visible >= all.length) return all;
-      return all.slice(0, visible);
-    },
-
-    // Check if pickup has more items to show
-    pickupHasMore() {
-      const visible = this.sectionVisibleCount['ПИКАП'] || 8;
-      return visible < this.pickupPallets.length;
-    },
-
     sectionList() {
       return dataLayer.getSections();
     },
@@ -434,8 +425,18 @@ const app = Vue.createApp({
       return this.favorites.length;
     },
 
+    favoriteSet() {
+      return new Set(this.favorites);
+    },
+
+    printQueueSet() {
+      return new Set(this.printQueue);
+    },
+
     favoriteShelves() {
-      return dataLayer.shelves.filter(s => this.favorites.includes(s.name));
+      const set = this.favoriteSet;
+      if (set.size === 0) return [];
+      return dataLayer.shelves.filter(s => set.has(s.name));
     },
 
     printCount() {
@@ -443,7 +444,9 @@ const app = Vue.createApp({
     },
 
     printShelves() {
-      return dataLayer.shelves.filter(s => this.printQueue.includes(s.name));
+      const set = this.printQueueSet;
+      if (set.size === 0) return [];
+      return dataLayer.shelves.filter(s => set.has(s.name));
     },
 
     formattedDataDate() {
@@ -466,13 +469,16 @@ const app = Vue.createApp({
       const q = this.searchQuery.trim().toLowerCase();
       if (q.length < 2) return [];
       const normalizedQ = q.replace(/[.\-\s]/g, '');
-      return dataLayer.shelves.filter(shelf => {
-        const name = shelf.name.toLowerCase();
-        if (name.includes(q)) return true;
-        if (shelf.barcode && shelf.barcode.toLowerCase().includes(q)) return true;
-        if (name.replace(/[.\-\s]/g, '').includes(normalizedQ)) return true;
-        return false;
-      }).slice(0, 50);
+      const items = dataLayer.searchItems;
+      const results = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.nameLower.includes(q) || item.barcodeLower.includes(q) || item.nameStripped.includes(normalizedQ)) {
+          results.push(item.shelf);
+          if (results.length >= 50) break;
+        }
+      }
+      return results;
     },
   },
 
@@ -496,14 +502,14 @@ const app = Vue.createApp({
     },
 
     getSectionRacksVisible(sectionName) {
-      const all = this.getSectionRacks(sectionName);
+      const all = sectionName === this.enteredSection ? this.sectionRacks : this.getSectionRacks(sectionName);
       const visible = this.sectionVisibleCount[sectionName] || 8;
       if (visible >= all.length) return all;
       return all.slice(0, visible);
     },
 
     getSectionHasMore(sectionName) {
-      const all = this.getSectionRacks(sectionName);
+      const all = sectionName === this.enteredSection ? this.sectionRacks : this.getSectionRacks(sectionName);
       const visible = this.sectionVisibleCount[sectionName] || 8;
       return visible < all.length;
     },
@@ -544,28 +550,21 @@ const app = Vue.createApp({
       this.selectedShelfLevels = shelfName;
     },
 
-    loadMore(sectionName) {
+    loadMore(sectionName, type) {
       vibrate();
-      const key = sectionName + '_pallets';
-      const currentPallets = this.sectionVisibleCount[key];
-      if (currentPallets !== undefined && this.enteredSection === sectionName) {
+      if (type === 'pallets') {
+        const key = sectionName + '_pallets';
+        const current = this.sectionVisibleCount[key] || 8;
         const total = this.sectionPallets.length;
-        const step = Math.min(12, total - currentPallets);
+        const step = Math.min(12, total - current);
         if (step > 0) {
-          this.sectionVisibleCount[key] = currentPallets + step;
+          this.sectionVisibleCount[key] = current + step;
         }
         return;
       }
       const current = this.sectionVisibleCount[sectionName] || 8;
-      const data = dataLayer.getSection(sectionName);
-      let total;
-      if (sectionName === 'ПИКАП') {
-        total = data.pallets.length;
-      } else {
-        const allRacks = data.racks.filter(r => r.level === null).sort((a, b) => parseInt(a.number, 10) - parseInt(b.number, 10));
-        total = allRacks.length;
-      }
-      // Load next batch of 12, or remaining if less
+      const allRacks = this.getSectionRacks(sectionName);
+      const total = allRacks.length;
       const step = Math.min(12, total - current);
       this.sectionVisibleCount[sectionName] = current + step;
     },
@@ -579,6 +578,7 @@ const app = Vue.createApp({
         const result = await barcodeGenerator.generate(barcode, shelf.name);
         this.barcodeSvg = result.svg;
         this.barcodePng = result.pngDataUrl;
+        this.barcodeJpg = result.jpgDataUrl;
       } catch (e) {
         this.barcodeError = e.message || 'Ошибка генерации штрих-кода';
       }
@@ -590,6 +590,7 @@ const app = Vue.createApp({
       this.barcodeError = null;
       this.barcodeSvg = '';
       this.barcodePng = null;
+      this.barcodeJpg = null;
       this.barcodeLoading = true;
       this.barcodeModalOpen = true;
       try {
@@ -603,11 +604,12 @@ const app = Vue.createApp({
       this.barcodeModalOpen = false;
     },
 
-    downloadPNG() {
-      if (!this.barcodePng) return;
+    downloadBarcode() {
+      const dataUrl = this.downloadFormat === 'jpg' ? this.barcodeJpg : this.barcodePng;
+      if (!dataUrl) return;
       const link = document.createElement('a');
-      link.download = this.currentBarcodeShelf.name + '.png';
-      link.href = this.barcodePng;
+      link.download = this.currentBarcodeShelf.name + '.' + this.downloadFormat;
+      link.href = dataUrl;
       link.click();
     },
 
@@ -698,7 +700,7 @@ const app = Vue.createApp({
     },
 
     isFavorite(name) {
-      return this.favorites.includes(name);
+      return this.favoriteSet.has(name);
     },
 
     toggleFavorite(name) {
@@ -712,7 +714,7 @@ const app = Vue.createApp({
     },
 
     isInPrintQueue(name) {
-      return this.printQueue.includes(name);
+      return this.printQueueSet.has(name);
     },
 
     togglePrintQueue(name) {
@@ -746,6 +748,16 @@ const app = Vue.createApp({
       } else {
         this.backFromSection();
       }
+    },
+
+    clearFavorites() {
+      this.favorites = [];
+      saveFavorites(this.favorites);
+    },
+
+    clearPrintQueue() {
+      this.printQueue = [];
+      savePrintQueue(this.printQueue);
     },
 
     removeFromPrintQueue(name) {

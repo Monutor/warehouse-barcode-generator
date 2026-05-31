@@ -835,6 +835,27 @@ button {
   background: rgba(var(--primary-rgb), 0.04) !important;
 }
 
+.barcode-format-toggle .btn-outline-primary {
+  color: var(--text-muted);
+  border-color: var(--card-border);
+  background: transparent;
+  font-weight: 400;
+  padding: 6px 12px;
+  font-size: 0.875rem;
+}
+
+.barcode-format-toggle .btn-outline-primary:hover:not(.active) {
+  color: var(--text-color);
+  background: rgba(var(--primary-rgb), 0.04);
+  border-color: var(--card-border);
+}
+
+.barcode-format-toggle .btn-outline-primary.active {
+  color: var(--text-color);
+  background: var(--card-bg);
+  border-color: var(--card-border);
+}
+
 .barcode-btn-print {
   padding: 6px 20px;
   font-size: 0.875rem;

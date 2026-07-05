@@ -925,7 +925,7 @@ const app = Vue.createApp({
           const barcode = cols[barcodeIdx];
           if (!article || !barcode) continue;
 
-          if (DataLayer.productByArticle.has(article)) { duplicates.push(article); continue; }
+          if (dataLayer.productByArticle.has(article)) { continue; }
           if (seenArticles.has(article)) continue;
           seenArticles.add(article);
 

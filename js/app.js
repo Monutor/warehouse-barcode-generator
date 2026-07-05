@@ -476,7 +476,10 @@ const app = Vue.createApp({
       if (!q) return [];
       const articles = q.split(',').map(s => s.trim()).filter(Boolean);
       const results = [];
+      const seen = new Set();
       for (const article of articles) {
+        if (seen.has(article)) continue;
+        seen.add(article);
         const product = dataLayer.productByArticle.get(article);
         if (product) results.push(product);
       }

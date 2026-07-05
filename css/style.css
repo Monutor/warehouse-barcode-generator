@@ -1074,6 +1074,15 @@ button {
   letter-spacing: 0.02em;
 }
 
+.instruction-subtitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 14px 0 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--card-border);
+}
+
 .instruction-list {
   margin: 0;
   padding: 0;

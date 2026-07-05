@@ -116,8 +116,9 @@
             <span class="name"><img src="icons/barcode-icon.svg" class="icon-img" alt=""> ШК Товара</span>
             <span class="icons"></span>
           </button>
-          <button class="btn btn-action" @click="openProductUpload" :disabled="productUploadOpen">
-            📥 Обновить базу ШК
+          <button class="shelf-card upload" @click="openProductUpload" :disabled="productUploadOpen">
+            <span class="name">📥 Обновить базу ШК</span>
+            <span class="icons"></span>
           </button>
         </div>
 
@@ -293,63 +294,68 @@
       </div>
     </div>
 
-    <!-- Upload panel -->
-    <div v-if="productUploadOpen" class="upload-panel">
-      <div class="upload-panel-header">
-        <h5>📥 Обновление базы ШК товаров</h5>
-        <button class="btn-close" @click="closeProductUpload"></button>
-      </div>
-
-      <div v-if="uploadStep === 'idle'" class="upload-dropzone">
-        <p>Выберите CSV-файл, выгруженный из SEW</p>
-        <input type="file" accept=".csv" @change="handleProductCSV($event.target.files[0])" class="form-control">
-      </div>
-
-      <div v-if="uploadStep === 'preview'">
-        <p class="upload-summary">Найдено <strong>{{ uploadedNewProducts.length }}</strong> новых товаров</p>
-        <div v-if="uploadedNewProducts.length > 0" class="upload-preview-table-wrapper">
-          <table class="upload-preview-table">
-            <thead>
-              <tr>
-                <th>Артикул</th>
-                <th>Наименование</th>
-                <th>ШК</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="p in uploadedNewProducts" :key="p.article">
-                <td>{{ p.article }}</td>
-                <td class="upload-name">{{ p.name }}</td>
-                <td class="upload-barcode">{{ p.barcode }}</td>
-              </tr>
-            </tbody>
-          </table>
+    <!-- Upload modal -->
+    <div v-if="productUploadOpen" class="modal d-block modal-overlay" tabindex="-1" @click.self="closeProductUpload">
+      <div class="barcode-modal-dialog">
+        <div class="barcode-modal-header">
+          <span class="barcode-modal-title">📥 Обновление базы ШК товаров</span>
+          <button type="button" class="barcode-modal-close" @click="closeProductUpload">×</button>
         </div>
-        <p v-else class="text-muted">Все товары уже есть в базе.</p>
-        <div class="upload-actions">
+        <div class="barcode-modal-body">
+
+          <div v-if="uploadStep === 'idle'" class="upload-dropzone">
+            <p>Выберите CSV-файл, выгруженный из SEW</p>
+            <input type="file" accept=".csv" @change="handleProductCSV($event.target.files[0])" class="form-control">
+          </div>
+
+          <div v-if="uploadStep === 'preview'">
+            <p class="upload-summary">Найдено <strong>{{ uploadedNewProducts.length }}</strong> новых товаров</p>
+            <div v-if="uploadedNewProducts.length > 0" class="upload-preview-table-wrapper">
+              <table class="upload-preview-table">
+                <thead>
+                  <tr>
+                    <th>Артикул</th>
+                    <th>Наименование</th>
+                    <th>ШК</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="p in uploadedNewProducts" :key="p.article">
+                    <td>{{ p.article }}</td>
+                    <td class="upload-name">{{ p.name }}</td>
+                    <td class="upload-barcode">{{ p.barcode }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p v-else class="text-muted">Все товары уже есть в базе.</p>
+          </div>
+
+          <div v-if="uploadStep === 'uploading'" class="upload-status">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p>Загрузка и слияние...</p>
+          </div>
+
+          <div v-if="uploadStep === 'done'" class="upload-status upload-success">
+            <p>✅ База обновлена!</p>
+            <p>Добавлено: {{ uploadResult.added }} товаров</p>
+            <p>Всего в базе: {{ uploadResult.total }} товаров</p>
+            <p class="text-muted small">Изменения появятся на сайте через 1-2 минуты.</p>
+            <button class="btn btn-primary" @click="closeProductUpload">Готово</button>
+          </div>
+
+          <div v-if="uploadStep === 'error'" class="upload-status upload-error">
+            <p>❌ Ошибка: {{ uploadResult?.error }}</p>
+            <button class="btn btn-primary" @click="openProductUpload">Попробовать снова</button>
+          </div>
+
+        </div>
+        <div class="barcode-modal-footer" v-if="uploadStep === 'preview'">
           <button class="btn btn-primary" @click="confirmProductUpload" :disabled="uploadedNewProducts.length === 0">
             ✅ Загрузить в базу
           </button>
           <button class="btn btn-outline-secondary" @click="closeProductUpload">Отмена</button>
         </div>
-      </div>
-
-      <div v-if="uploadStep === 'uploading'" class="upload-status">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p>Загрузка и слияние...</p>
-      </div>
-
-      <div v-if="uploadStep === 'done'" class="upload-status upload-success">
-        <p>✅ База обновлена!</p>
-        <p>Добавлено: {{ uploadResult.added }} товаров</p>
-        <p>Всего в базе: {{ uploadResult.total }} товаров</p>
-        <p class="text-muted small">Изменения появятся на сайте через 1-2 минуты.</p>
-        <button class="btn btn-primary" @click="closeProductUpload">Готово</button>
-      </div>
-
-      <div v-if="uploadStep === 'error'" class="upload-status upload-error">
-        <p>❌ Ошибка: {{ uploadResult?.error }}</p>
-        <button class="btn btn-primary" @click="openProductUpload">Попробовать снова</button>
       </div>
     </div>
 

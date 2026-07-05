@@ -981,13 +981,15 @@ const app = Vue.createApp({
 
     // Close modals on Escape key
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        if (this.barcodeModalOpen) {
-          this.closeBarcodeModal();
-        } else if (this.productSearchOpen) {
-          this.closeProductSearch();
+        if (e.key === 'Escape') {
+          if (this.productUploadOpen) {
+            this.closeProductUpload();
+          } else if (this.barcodeModalOpen) {
+            this.closeBarcodeModal();
+          } else if (this.productSearchOpen) {
+            this.closeProductSearch();
+          }
         }
-      }
     });
 
     // Handle hash navigation for favorites/print

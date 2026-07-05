@@ -337,6 +337,7 @@ class DataLayer {
 const dataLayer = new DataLayer();
 const barcodeCache = new BarcodeCache();
 const barcodeGenerator = new BarcodeGenerator(barcodeCache);
+const PRODUCT_MERGE_API_URL = 'https://warehouse-barcode-generator.vercel.app/api/merge-products';
 
 const app = Vue.createApp({
   data() {
@@ -373,6 +374,10 @@ const app = Vue.createApp({
       barcodeMode: 'shelf',
       productSearchOpen: false,
       productSearchArticle: '',
+      productUploadOpen: false,
+      uploadStep: 'idle', // idle | preview | uploading | done | error
+      uploadedNewProducts: [],
+      uploadResult: null,
     };
   },
 
@@ -878,6 +883,80 @@ const app = Vue.createApp({
       this.isDark = saved ? saved === 'dark' : true;
       document.documentElement.setAttribute('data-theme', this.isDark ? 'dark' : 'light');
       document.querySelector('meta[name="theme-color"]').content = this.isDark ? '#121212' : '#d48a1c';
+    },
+
+    openProductUpload() {
+      this.productUploadOpen = true;
+      this.uploadStep = 'idle';
+      this.uploadedNewProducts = [];
+      this.uploadResult = null;
+    },
+    closeProductUpload() {
+      this.productUploadOpen = false;
+      this.uploadStep = 'idle';
+      this.uploadedNewProducts = [];
+      this.uploadResult = null;
+    },
+    handleProductCSV(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target.result;
+        const lines = text.split('\n').filter(line => line.trim());
+        const newProducts = [];
+        const duplicates = [];
+        const seenArticles = new Set();
+
+        // Skip header, find relevant columns
+        const header = lines[0].split(';').map(h => h.trim());
+        const artIdx = header.indexOf('Код товара');
+        const nameIdx = header.indexOf('Наименование');
+        const barcodeIdx = header.indexOf('ШК товара');
+
+        if (artIdx === -1 || nameIdx === -1 || barcodeIdx === -1) {
+          this.uploadResult = { error: 'Не найдены колонки: Код товара, Наименование, ШК товара' };
+          this.uploadStep = 'error';
+          return;
+        }
+
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(';').map(c => c.trim());
+          const article = cols[artIdx];
+          const name = cols[nameIdx];
+          const barcode = cols[barcodeIdx];
+          if (!article || !barcode) continue;
+
+          if (DataLayer.productByArticle.has(article)) { duplicates.push(article); continue; }
+          if (seenArticles.has(article)) continue;
+          seenArticles.add(article);
+
+          newProducts.push({ article, name, barcode });
+        }
+
+        this.uploadedNewProducts = newProducts;
+        this.uploadStep = 'preview';
+      };
+      reader.onerror = () => {
+        this.uploadResult = { error: 'Ошибка чтения файла' };
+        this.uploadStep = 'error';
+      };
+      reader.readAsText(file);
+    },
+    async confirmProductUpload() {
+      this.uploadStep = 'uploading';
+      try {
+        const res = await fetch(PRODUCT_MERGE_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ products: this.uploadedNewProducts })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server error');
+        this.uploadResult = data;
+        this.uploadStep = 'done';
+      } catch (err) {
+        this.uploadResult = { error: err.message };
+        this.uploadStep = 'error';
+      }
     },
 
   },

@@ -337,7 +337,7 @@ class DataLayer {
 const dataLayer = new DataLayer();
 const barcodeCache = new BarcodeCache();
 const barcodeGenerator = new BarcodeGenerator(barcodeCache);
-const PRODUCT_MERGE_API_URL = 'https://warehouse-barcode-generator.vercel.app/api/merge-products';
+const PRODUCT_MERGE_API_URL = 'https://warehouse-barcode-generator-vercel.vercel.app/api/merge-products';
 
 const app = Vue.createApp({
   data() {

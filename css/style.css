@@ -1123,3 +1123,113 @@ button {
     font-size: 0.75rem;
   }
 }
+
+/* ===== Upload card in quick-action grid ===== */
+.shelf-card.upload {
+  border-color: #2e7d32;
+  background: rgba(46, 125, 50, 0.08);
+}
+.shelf-card.upload .name {
+  color: #2e7d32;
+}
+.shelf-card.upload:hover {
+  background: rgba(46, 125, 50, 0.15);
+}
+[data-theme="dark"] .shelf-card.upload {
+  border-color: #4caf50;
+  background: rgba(76, 175, 80, 0.1);
+}
+[data-theme="dark"] .shelf-card.upload .name {
+  color: #81c784;
+}
+[data-theme="dark"] .shelf-card.upload:hover {
+  background: rgba(76, 175, 80, 0.18);
+}
+
+/* ===== Upload panel ===== */
+.upload-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.upload-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.upload-panel-header h5 {
+  margin: 0;
+  color: var(--text);
+}
+.upload-dropzone {
+  text-align: center;
+  padding: 24px;
+  border: 2px dashed var(--card-border);
+  border-radius: 8px;
+}
+.upload-dropzone .form-control {
+  max-width: 400px;
+  margin: 12px auto 0;
+}
+.upload-summary {
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.upload-preview-table-wrapper {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+}
+.upload-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.upload-preview-table th {
+  background: var(--card-bg);
+  color: var(--text-muted);
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--card-border);
+  position: sticky;
+  top: 0;
+}
+.upload-preview-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--card-border);
+  color: var(--text);
+}
+.upload-preview-table tr:last-child td {
+  border-bottom: none;
+}
+.upload-name {
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.upload-barcode {
+  font-family: monospace;
+  font-size: 12px;
+}
+.upload-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.upload-status {
+  text-align: center;
+  padding: 24px;
+  color: var(--text);
+}
+.upload-success p {
+  margin: 8px 0;
+}
+.upload-error p {
+  margin: 8px 0;
+}

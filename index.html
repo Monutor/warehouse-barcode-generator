@@ -116,10 +116,6 @@
             <span class="name"><img src="icons/barcode-icon.svg" class="icon-img" alt=""> ШК Товара</span>
             <span class="icons"></span>
           </button>
-          <button class="shelf-card upload" @click="openProductUpload" :disabled="productUploadOpen">
-            <span class="name">📥 Обновить базу ШК</span>
-            <span class="icons"></span>
-          </button>
         </div>
 
         <!-- Product search (full area when open) -->
@@ -131,6 +127,9 @@
           <div class="mb-3">
             <input type="text" class="form-control form-control-lg" v-model="productSearchArticle" placeholder="Введите артикул(ы) через запятую..." aria-label="Поиск товара по артикулу">
           </div>
+          <button class="btn btn-outline-primary w-100 py-2 mb-3" @click="openProductUpload">
+            📥 Обновить базу ШК
+          </button>
           <template v-for="product in foundProducts" :key="product.article">
             <div class="shelf-card" @click="selectProduct(product)">
               <div class="product-info">

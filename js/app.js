@@ -224,6 +224,8 @@ class DataLayer {
     this.nameIndex = new Map();
     this.sectionIndex = new Map();
     this.searchItems = [];
+    this.products = [];
+    this.productByArticle = new Map();
   }
 
   async load() {
@@ -236,6 +238,17 @@ class DataLayer {
     this.buildIndexes();
     this.buildSearchIndex();
     return data;
+  }
+
+  async loadProducts() {
+    const resp = await fetch('data/products.json');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    this.products = data.products || [];
+    this.productByArticle.clear();
+    for (const p of this.products) {
+      this.productByArticle.set(p.article, p);
+    }
   }
 
   buildSearchIndex() {
@@ -339,6 +352,7 @@ const app = Vue.createApp({
       barcodeError: null,
       barcodeLoading: false,
       printLoading: false,
+      printProductLoading: false,
       error: null,
       loading: true,
       stats: { totalSections: 0, totalShelves: 0, totalPallets: 0, totalZones: 0 },
@@ -354,8 +368,11 @@ const app = Vue.createApp({
       printQueue: [],
       sectionVisibleCount: {},
       enteredSection: null,
-      selectedShelfLevels: null, // shelf name whose levels we're viewing
+      selectedShelfLevels: null,
       barcodeModalOpen: false,
+      barcodeMode: 'shelf',
+      productSearchOpen: false,
+      productSearchArticle: '',
     };
   },
 
@@ -447,6 +464,25 @@ const app = Vue.createApp({
       const set = this.printQueueSet;
       if (set.size === 0) return [];
       return dataLayer.shelves.filter(s => set.has(s.name));
+    },
+
+    foundProducts() {
+      const q = this.productSearchArticle.trim();
+      if (!q) return [];
+      const articles = q.split(',').map(s => s.trim()).filter(Boolean);
+      const results = [];
+      for (const article of articles) {
+        const product = dataLayer.productByArticle.get(article);
+        if (product) results.push(product);
+      }
+      return results;
+    },
+
+    notFoundArticles() {
+      const q = this.productSearchArticle.trim();
+      if (!q) return [];
+      const articles = q.split(',').map(s => s.trim()).filter(Boolean);
+      return articles.filter(a => !dataLayer.productByArticle.has(a));
     },
 
     formattedDataDate() {
@@ -569,13 +605,17 @@ const app = Vue.createApp({
       this.sectionVisibleCount[sectionName] = current + step;
     },
 
-    async generateBarcode(shelf) {
+    async generateBarcode(item) {
       try {
-        let barcode = shelf.barcode;
-        if (!barcode) {
-          barcode = transliterate(shelf.name);
+        let barcode = item.barcode;
+        let text = item.name;
+        if (this.barcodeMode === 'product') {
+          text = item.name + ' | ' + item.article;
         }
-        const result = await barcodeGenerator.generate(barcode, shelf.name);
+        if (!barcode) {
+          barcode = transliterate(text);
+        }
+        const result = await barcodeGenerator.generate(barcode, text);
         this.barcodeSvg = result.svg;
         this.barcodePng = result.pngDataUrl;
         this.barcodeJpg = result.jpgDataUrl;
@@ -586,6 +626,7 @@ const app = Vue.createApp({
 
     async selectShelf(shelf) {
       vibrate();
+      this.barcodeMode = 'shelf';
       this.currentBarcodeShelf = shelf;
       this.barcodeError = null;
       this.barcodeSvg = '';
@@ -600,8 +641,40 @@ const app = Vue.createApp({
       }
     },
 
+    openProductSearch() {
+      vibrate();
+      this.productSearchOpen = true;
+      this.productSearchArticle = '';
+      this.enteredSection = null;
+      this.selectedShelfLevels = null;
+      this.activeSection = null;
+    },
+
+    closeProductSearch() {
+      this.productSearchOpen = false;
+      this.productSearchArticle = '';
+    },
+
+    async selectProduct(product) {
+      vibrate();
+      this.barcodeMode = 'product';
+      this.currentBarcodeShelf = product;
+      this.barcodeError = null;
+      this.barcodeSvg = '';
+      this.barcodePng = null;
+      this.barcodeJpg = null;
+      this.barcodeLoading = true;
+      this.barcodeModalOpen = true;
+      try {
+        await this.generateBarcode(product);
+      } finally {
+        this.barcodeLoading = false;
+      }
+    },
+
     closeBarcodeModal() {
       this.barcodeModalOpen = false;
+      this.barcodeMode = 'shelf';
     },
 
     downloadBarcode() {
@@ -633,25 +706,39 @@ const app = Vue.createApp({
       this.printLoading = false;
     },
 
-    async printOne(shelf) {
+    async printProductFound() {
       vibrate();
-      await this.renderPrintPages([shelf]);
+      const products = this.foundProducts;
+      if (products.length === 0) return;
+      this.printProductLoading = true;
+      this.showToast('Генерация штрихов для печати...');
+      await this.renderPrintPages(products, p => p.name + ' | ' + p.article);
+      this.printProductLoading = false;
     },
 
-    async renderPrintPages(shelves) {
+    async printOne(item) {
+      vibrate();
+      const getText = this.barcodeMode === 'product'
+        ? p => p.name + ' | ' + p.article
+        : null;
+      await this.renderPrintPages([item], getText);
+    },
+
+    async renderPrintPages(items, getText) {
       const printArea = document.getElementById('print-area');
       if (!printArea) return;
       printArea.innerHTML = '';
       let html = '<div class="print-page">';
       let idx = 0;
       const perPage = 12;
-      for (const shelf of shelves) {
+      for (const item of items) {
         try {
-          let barcode = shelf.barcode || transliterate(shelf.name);
-          const result = await barcodeGenerator.generate(barcode, shelf.name);
+          const text = getText ? getText(item) : item.name;
+          let barcode = item.barcode || transliterate(text);
+          const result = await barcodeGenerator.generate(barcode, text);
           html += '<div class="print-label">' + result.svg + '</div>';
           idx++;
-          if (idx % perPage === 0 && idx < shelves.length) {
+          if (idx % perPage === 0 && idx < items.length) {
             html += '</div><div class="print-page">';
           }
         } catch (e) {
@@ -680,10 +767,13 @@ const app = Vue.createApp({
     async init() {
       try {
         await barcodeCache.init();
-        const data = await dataLayer.load();
+        const [shelfData] = await Promise.all([
+          dataLayer.load(),
+          dataLayer.loadProducts()
+        ]);
         this.stats = dataLayer.getStats();
-        this.dataVersion = data.version || '';
-        this.dataUpdatedAt = data.updatedAt || '';
+        this.dataVersion = shelfData.version || '';
+        this.dataUpdatedAt = shelfData.updatedAt || '';
         this.favorites = loadFavorites();
         this.printQueue = loadPrintQueue();
         this.loading = false;
@@ -810,10 +900,14 @@ const app = Vue.createApp({
     window.addEventListener('online', () => { this.isOffline = false; });
     window.addEventListener('offline', () => { this.isOffline = true; });
 
-    // Close barcode modal on Escape key
+    // Close modals on Escape key
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.barcodeModalOpen) {
-        this.closeBarcodeModal();
+      if (e.key === 'Escape') {
+        if (this.barcodeModalOpen) {
+          this.closeBarcodeModal();
+        } else if (this.productSearchOpen) {
+          this.closeProductSearch();
+        }
       }
     });
 

@@ -75,10 +75,44 @@ def convert_csv_to_json(csv_path, json_path):
     print(f'Converted {len(shelves)} shelves to {json_path}')
     print(f'Version: {version} | Updated: {updated_at}')
 
+def convert_products_to_json(csv_path, json_path):
+    products = {}
+    with open(csv_path, 'r', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f, delimiter=';')
+        for row in reader:
+            article = row['Код товара'].strip()
+            name = row['Наименование'].strip()
+            barcode = row['ШК товара'].strip()
+            if article and barcode and article not in products:
+                products[article] = {
+                    'article': article,
+                    'name': name,
+                    'barcode': barcode
+                }
+
+    now = datetime.now(timezone.utc)
+    version = now.strftime('%Y%m%d%H%M%S')
+    updated_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+    os.makedirs(os.path.dirname(json_path), exist_ok=True)
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump({
+            'version': version,
+            'updatedAt': updated_at,
+            'products': list(products.values())
+        }, f, ensure_ascii=False, indent=2)
+
+    print(f'Converted {len(products)} products to {json_path}')
+    print(f'Version: {version} | Updated: {updated_at}')
+
 if __name__ == '__main__':
     script_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(script_dir)
     convert_csv_to_json(
         os.path.join(root_dir, 'warehouse_data.csv'),
         os.path.join(root_dir, 'data', 'shelves.json')
+    )
+    convert_products_to_json(
+        os.path.join(root_dir, 'Остатки S187 2026-07-05_00-11-43.csv'),
+        os.path.join(root_dir, 'data', 'products.json')
     )

@@ -4,3 +4,5 @@ __pycache__/
 .env
 docs
 .playwright-mcp/
+AGENTS.md
+*.csv

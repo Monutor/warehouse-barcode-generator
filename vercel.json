@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/merge-products.js": {
+      "maxDuration": 10
+    }
+  }
+}

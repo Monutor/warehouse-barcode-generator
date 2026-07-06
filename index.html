@@ -66,6 +66,7 @@
         <div class="stat-card"><div class="num">{{ stats.totalPallets }}</div><div class="label">Поддонов</div></div>
         <div class="stat-card"><div class="num">{{ stats.totalZones }}</div><div class="label">Зон</div></div>
       </div>
+      <div v-if="formattedDataDate" class="text-muted small text-center mb-3">База обновлена: {{ formattedDataDate }}</div>
 
       <!-- Инструкция -->
       <div class="instruction-card mb-3">

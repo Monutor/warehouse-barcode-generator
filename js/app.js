@@ -900,49 +900,90 @@ const app = Vue.createApp({
       this.uploadedNewProducts = [];
       this.uploadResult = null;
     },
-    handleProductCSV(file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target.result;
-        const lines = text.split('\n').filter(line => line.trim());
-        const newProducts = [];
-        const duplicates = [];
-        const seenArticles = new Set();
+    handleProductFile(file) {
+      const isXLSX = file.name.toLowerCase().endsWith('.xlsx');
 
-        // Skip header, find relevant columns
-        const header = lines[0].split(';').map(h => h.trim());
-        const artIdx = header.indexOf('Код товара');
-        const nameIdx = header.indexOf('Наименование');
-        const barcodeIdx = header.indexOf('ШК товара');
+      if (isXLSX) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
-        if (artIdx === -1 || nameIdx === -1 || barcodeIdx === -1) {
-          this.uploadResult = { error: 'Не найдены колонки: Код товара, Наименование, ШК товара' };
+            if (!rows[0] || !('Код товара' in rows[0]) || !('Наименование' in rows[0]) || !('ШК товара' in rows[0])) {
+              this.uploadResult = { error: 'Не найдены колонки: Код товара, Наименование, ШК товара' };
+              this.uploadStep = 'error';
+              return;
+            }
+
+            const newProducts = [];
+            const seenArticles = new Set();
+
+            for (const row of rows) {
+              const article = String(row['Код товара']).trim();
+              const name = String(row['Наименование']).trim();
+              const barcode = String(row['ШК товара']).trim();
+              if (!article || !barcode) continue;
+              if (dataLayer.productByArticle.has(article)) continue;
+              if (seenArticles.has(article)) continue;
+              seenArticles.add(article);
+              newProducts.push({ article, name, barcode });
+            }
+
+            this.uploadedNewProducts = newProducts;
+            this.uploadStep = 'preview';
+          } catch (err) {
+            this.uploadResult = { error: 'Ошибка чтения XLSX: ' + err.message };
+            this.uploadStep = 'error';
+          }
+        };
+        reader.onerror = () => {
+          this.uploadResult = { error: 'Ошибка чтения файла' };
           this.uploadStep = 'error';
-          return;
-        }
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = e.target.result;
+          const lines = text.split('\n').filter(line => line.trim());
+          const newProducts = [];
+          const seenArticles = new Set();
 
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(';').map(c => c.trim());
-          const article = cols[artIdx];
-          const name = cols[nameIdx];
-          const barcode = cols[barcodeIdx];
-          if (!article || !barcode) continue;
+          const header = lines[0].split(';').map(h => h.trim());
+          const artIdx = header.indexOf('Код товара');
+          const nameIdx = header.indexOf('Наименование');
+          const barcodeIdx = header.indexOf('ШК товара');
 
-          if (dataLayer.productByArticle.has(article)) { continue; }
-          if (seenArticles.has(article)) continue;
-          seenArticles.add(article);
+          if (artIdx === -1 || nameIdx === -1 || barcodeIdx === -1) {
+            this.uploadResult = { error: 'Не найдены колонки: Код товара, Наименование, ШК товара' };
+            this.uploadStep = 'error';
+            return;
+          }
 
-          newProducts.push({ article, name, barcode });
-        }
+          for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(';').map(c => c.trim());
+            const article = cols[artIdx];
+            const name = cols[nameIdx];
+            const barcode = cols[barcodeIdx];
+            if (!article || !barcode) continue;
+            if (dataLayer.productByArticle.has(article)) continue;
+            if (seenArticles.has(article)) continue;
+            seenArticles.add(article);
+            newProducts.push({ article, name, barcode });
+          }
 
-        this.uploadedNewProducts = newProducts;
-        this.uploadStep = 'preview';
-      };
-      reader.onerror = () => {
-        this.uploadResult = { error: 'Ошибка чтения файла' };
-        this.uploadStep = 'error';
-      };
-      reader.readAsText(file);
+          this.uploadedNewProducts = newProducts;
+          this.uploadStep = 'preview';
+        };
+        reader.onerror = () => {
+          this.uploadResult = { error: 'Ошибка чтения файла' };
+          this.uploadStep = 'error';
+        };
+        reader.readAsText(file);
+      }
     },
     async confirmProductUpload() {
       this.uploadStep = 'uploading';

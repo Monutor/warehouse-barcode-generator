@@ -307,8 +307,8 @@
         <div class="barcode-modal-body">
 
           <div v-if="uploadStep === 'idle'" class="upload-dropzone">
-            <p>Выберите CSV-файл, выгруженный из SEW</p>
-            <input type="file" accept=".csv" @change="handleProductCSV($event.target.files[0])" class="form-control">
+            <p>Выберите CSV или XLSX-файл, выгруженный из SEW</p>
+            <input type="file" accept=".csv,.xlsx" @change="handleProductFile($event.target.files[0])" class="form-control">
           </div>
 
           <div v-if="uploadStep === 'preview'">
@@ -405,6 +405,7 @@
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js" integrity="sha384-Kk5SjBOKprEnGfyBWfD2zROFd1Cu8kwOXxG2GIhYPcoDL2rBJS9P8Ud1ZMy4412a" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

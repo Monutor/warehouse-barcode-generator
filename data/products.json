@@ -1,6 +1,6 @@
 {
-  "version": 1783247048773,
-  "updatedAt": "2026-07-05T10:24:08.773Z",
+  "version": 1783324140944,
+  "updatedAt": "2026-07-06T07:49:00.944Z",
   "products": [
     {
       "article": "400249707",
@@ -38796,6 +38796,191 @@
       "article": "55555551",
       "name": "(А,АИ,МП,И)ТЕСТОВЫЙ ТОВАР1",
       "barcode": "40000000000"
+    },
+    {
+      "article": "400241548",
+      "name": "SW Xiaomi Watch 2 Pro Bl M2234W1",
+      "barcode": "6941812724781"
+    },
+    {
+      "article": "10033084",
+      "name": "TV Hi HT-40H01FB (40F01FB)",
+      "barcode": "2001003308429"
+    },
+    {
+      "article": "400355463",
+      "name": "VC Dreame H12SAE",
+      "barcode": "6976233679303"
+    },
+    {
+      "article": "400514118",
+      "name": "(А)AS Defender 65432",
+      "barcode": "4714033654326"
+    },
+    {
+      "article": "4258616",
+      "name": "(А)WM Hisense WF3I9043BWFS2",
+      "barcode": "2000425861628"
+    },
+    {
+      "article": "4256223",
+      "name": "(А)В/выт. Haier HVX-T642GW",
+      "barcode": "693722431404730293"
+    },
+    {
+      "article": "4269906",
+      "name": "(А)В/Г/пан. Midea MG699TTGW",
+      "barcode": "693996262757165284"
+    },
+    {
+      "article": "4259125",
+      "name": "(А)В/И/пан. Hisense HI6443BSCWF",
+      "barcode": "2000425912511"
+    },
+    {
+      "article": "4256153",
+      "name": "(А)В/Э/пан. Haier HHY-C64RVB",
+      "barcode": "692577781349030293"
+    },
+    {
+      "article": "400823433",
+      "name": "(АИ)PDA Samsung S26 12/256GB Black",
+      "barcode": "2040082343310"
+    },
+    {
+      "article": "4254346",
+      "name": "(АИ)Науш. Sony WH-CH520 Bl",
+      "barcode": "2000425434617"
+    },
+    {
+      "article": "400514375",
+      "name": "(А)Науш. Defender 62471",
+      "barcode": "4714033624718"
+    },
+    {
+      "article": "400790837",
+      "name": "(А)Сумка Defender 26292",
+      "barcode": "4714033262927"
+    },
+    {
+      "article": "400790586",
+      "name": "(А)Сумка Defender 26293",
+      "barcode": "4714033262934"
+    },
+    {
+      "article": "400790587",
+      "name": "(А)Сумка Defender 26294",
+      "barcode": "4714033262941"
+    },
+    {
+      "article": "400790588",
+      "name": "(А)Сумка Defender 26295",
+      "barcode": "4745091895246"
+    },
+    {
+      "article": "400790589",
+      "name": "(А)Сумка Defender 26296",
+      "barcode": "4745091895253"
+    },
+    {
+      "article": "400790590",
+      "name": "(А)Сумка Defender 26297",
+      "barcode": "4745091895260"
+    },
+    {
+      "article": "400790591",
+      "name": "(А)Сумка Defender 26298",
+      "barcode": "4745091895277"
+    },
+    {
+      "article": "400368739",
+      "name": "Блендер RED sol. HB2902",
+      "barcode": "5060982437091"
+    },
+    {
+      "article": "401972355",
+      "name": "Кофемаш. Supra CMS-3700 Gp",
+      "barcode": "4895253319278"
+    },
+    {
+      "article": "400623782",
+      "name": "(МП)MG Scarlett SC-MG45M33",
+      "barcode": "505037033444662418"
+    },
+    {
+      "article": "400291189",
+      "name": "(МП)RF Tesler RC-73 WOOD",
+      "barcode": "462707683122040812"
+    },
+    {
+      "article": "400459433",
+      "name": "(МП)VC Haier HVC150",
+      "barcode": "695260550008622241"
+    },
+    {
+      "article": "400369123",
+      "name": "(МП)Блендер Scarlett SC-HB42F40",
+      "barcode": "505037033288662418"
+    },
+    {
+      "article": "4282029",
+      "name": "(МП)Блок Bufett AS-H09/AC804 in",
+      "barcode": "4251996408042"
+    },
+    {
+      "article": "4282030",
+      "name": "(МП)Блок Bufett AS-H09/AC804 out",
+      "barcode": "2000428203012"
+    },
+    {
+      "article": "401439401",
+      "name": "(МП)В/MW Zig & Sh BMO 28 B Bl",
+      "barcode": "204014394011358947"
+    },
+    {
+      "article": "400248559",
+      "name": "(МП)В/увл. FUTULA H2S",
+      "barcode": "692789939037854744"
+    },
+    {
+      "article": "400557001",
+      "name": "(МП)В/увл. Кама 2407",
+      "barcode": "204005570011969269"
+    },
+    {
+      "article": "401083270",
+      "name": "(МП)Пылесос для бассейна NemoCam 1040 Bo",
+      "barcode": "204385511615974004"
+    },
+    {
+      "article": "401315094",
+      "name": "(МП)Радио наушники Realme Buds T300 Bl",
+      "barcode": "203951416597271513"
+    },
+    {
+      "article": "400874660",
+      "name": "(МП)Солнечная батарея, панель Strompulse",
+      "barcode": "200000000005369225"
+    },
+    {
+      "article": "401278435",
+      "name": "(МП)Стеклооч. Rapid Home HCR-11 Pro Wh",
+      "barcode": "204012784351567554"
+    },
+    {
+      "article": "401191442",
+      "name": "(МП)Сушка OVK HOME Basic Bl",
+      "barcode": "464036038556870672"
+    },
+    {
+      "article": "400535876",
+      "name": "(МП)ЭЧ Bufett LKT 292S",
+      "barcode": "425199640292764638"
+    },
+    {
+      "article": "401174720",
+      "name": "Наб. Rondell Mustang RD-1977 Bl",
+      "barcode": "4630143175608"
     }
   ]
 }

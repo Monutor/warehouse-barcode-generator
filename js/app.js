@@ -242,13 +242,14 @@ class DataLayer {
 
   async loadProducts() {
     const resp = await fetch('data/products.json');
-    if (!resp.ok) return;
+    if (!resp.ok) return null;
     const data = await resp.json();
     this.products = data.products || [];
     this.productByArticle.clear();
     for (const p of this.products) {
       this.productByArticle.set(p.article, p);
     }
+    return data;
   }
 
   buildSearchIndex() {
@@ -494,18 +495,25 @@ const app = Vue.createApp({
     },
 
     formattedDataDate() {
-      if (!this.dataUpdatedAt) return '';
+      if (!this.dataUpdatedAt && !this.dataVersion) return '';
       try {
-        const d = new Date(this.dataUpdatedAt);
-        return d.toLocaleDateString('ru-RU', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
+        let result = '';
+        if (this.dataUpdatedAt) {
+          const d = new Date(this.dataUpdatedAt);
+          result = d.toLocaleDateString('ru-RU', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        }
+        if (this.dataVersion) {
+          result += ` (версия: ${this.dataVersion})`;
+        }
+        return result;
       } catch {
-        return this.dataUpdatedAt;
+        return this.dataUpdatedAt || '';
       }
     },
 
@@ -775,13 +783,13 @@ const app = Vue.createApp({
     async init() {
       try {
         await barcodeCache.init();
-        const [shelfData] = await Promise.all([
+        const [shelfData, productData] = await Promise.all([
           dataLayer.load(),
           dataLayer.loadProducts()
         ]);
         this.stats = dataLayer.getStats();
-        this.dataVersion = shelfData.version || '';
-        this.dataUpdatedAt = shelfData.updatedAt || '';
+        this.dataVersion = productData?.version || shelfData.version || '';
+        this.dataUpdatedAt = productData?.updatedAt || shelfData.updatedAt || '';
         this.favorites = loadFavorites();
         this.printQueue = loadPrintQueue();
         this.loading = false;

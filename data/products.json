@@ -1,6 +1,6 @@
 {
-  "version": 1783329080183,
-  "updatedAt": "2026-07-06T09:11:20.183Z",
+  "version": 1783442208299,
+  "updatedAt": "2026-07-07T16:36:48.299Z",
   "products": [
     {
       "article": "400249707",
@@ -52691,6 +52691,126 @@
       "article": "20072169",
       "name": "Э/щипцы Rowenta CF4310F0",
       "barcode": "3121040079331"
+    },
+    {
+      "article": "4269867",
+      "name": "(А)MW Midea MM720C2MV-W",
+      "barcode": "481377900450865284"
+    },
+    {
+      "article": "400522540",
+      "name": "(А)PDA REDMI Note 15 8/128GB Gl B",
+      "barcode": "6932554483104"
+    },
+    {
+      "article": "4257081",
+      "name": "(А)В/выт.Candy CBT60RBG-07",
+      "barcode": "805901907537230293"
+    },
+    {
+      "article": "400484444",
+      "name": "(А)В/выт. Evelux Amanda 60 B",
+      "barcode": "3830079123471"
+    },
+    {
+      "article": "4256278",
+      "name": "(А)В/Г/пан. Candy CHXG64CWB",
+      "barcode": "697211988114330293"
+    },
+    {
+      "article": "4322059",
+      "name": "(АИ)WM LG F2Y1HS6W.ABW",
+      "barcode": "2000432205910"
+    },
+    {
+      "article": "401373003",
+      "name": "(А)Крышка ATTRIBUTE ALN024",
+      "barcode": "4660132146562"
+    },
+    {
+      "article": "30077953",
+      "name": "(В)PDA Samsung SM-S9080 12/512Gb Ph/Bl",
+      "barcode": "2003007795311"
+    },
+    {
+      "article": "50181018",
+      "name": "(В)Клав. HyperX Alloy Mars 2",
+      "barcode": "2005018101815"
+    },
+    {
+      "article": "20084177",
+      "name": "М/кам. Haier HF-284WG",
+      "barcode": "4627123431090"
+    },
+    {
+      "article": "402033681",
+      "name": "(МП)AC Ballu Orbis BPAC-07 OR/N6 Wh",
+      "barcode": "466029420808572133"
+    },
+    {
+      "article": "401878011",
+      "name": "(МП)DVPH UniDom 4К HDMI JY540 СЕРЫЙ -м",
+      "barcode": "204018780111173742"
+    },
+    {
+      "article": "400484767",
+      "name": "(МП)LED-лента Camelion DSL-006 (15684)",
+      "barcode": "489525780047508279"
+    },
+    {
+      "article": "400368722",
+      "name": "(МП)VC Scarlett SC-VC80C377",
+      "barcode": "505037031379362418"
+    },
+    {
+      "article": "400538447",
+      "name": "(МП)VC STONBERG VC100",
+      "barcode": "466021852159763045"
+    },
+    {
+      "article": "400368581",
+      "name": "(МП)Блендер Scarlett SC-HB42F96",
+      "barcode": "505037032670062418"
+    },
+    {
+      "article": "400579411",
+      "name": "(МП)Вакуумизатор Comfort&Yus Black",
+      "barcode": "204005794111469748"
+    },
+    {
+      "article": "400487070",
+      "name": "(МП)В/выт. ZUGEL ZHT651GX стальная",
+      "barcode": "461021658073722241"
+    },
+    {
+      "article": "401260524",
+      "name": "(МП)Весы напольные электронные yus&l Нап",
+      "barcode": "204012605241369748"
+    },
+    {
+      "article": "400154402",
+      "name": "(МП)ИП Oasis РI-DB3K",
+      "barcode": "4640130938796"
+    },
+    {
+      "article": "400455340",
+      "name": "(МП)Мо.Wis.WS36050BDW02114BW405BW302644B",
+      "barcode": "160300508820363453"
+    },
+    {
+      "article": "400194894",
+      "name": "(МП)Стеклооч. Okami Okami Q75",
+      "barcode": "467372786522954839"
+    },
+    {
+      "article": "400656560",
+      "name": "(МП)Стеллаж Брин polkag027",
+      "barcode": "250000332018470679"
+    },
+    {
+      "article": "20092105",
+      "name": "(У)MW LG MS2042DY",
+      "barcode": "2002009210518"
     }
   ]
 }

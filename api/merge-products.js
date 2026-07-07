@@ -22,18 +22,33 @@ export default async function handler(req, res) {
   const owner = 'Monutor'
   const repo = 'warehouse-barcode-generator'
   const path = 'data/products.json'
-  const api = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`
+  const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`
+  const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${path}`
   const headers = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' }
 
-  const controller = new AbortController()
-  const ghTimeout = setTimeout(() => controller.abort(), 8000)
-
   try {
-    const getRes = await fetch(`${api}?ref=main`, { headers, signal: controller.signal })
-    clearTimeout(ghTimeout)
-    if (!getRes.ok) throw new Error(`GitHub GET failed: ${getRes.status}`)
-    const file = await getRes.json()
-    const current = JSON.parse(Buffer.from(file.content, 'base64').toString())
+    let sha
+    let current
+
+    {
+      const ac = new AbortController()
+      const t = setTimeout(() => ac.abort(), 5000)
+      const metaRes = await fetch(`${apiBase}?ref=main`, { headers, signal: ac.signal })
+      clearTimeout(t)
+      if (!metaRes.ok) throw new Error(`GitHub metadata fetch failed: ${metaRes.status}`)
+      const meta = await metaRes.json()
+      sha = meta.sha
+    }
+
+    {
+      const ac = new AbortController()
+      const t = setTimeout(() => ac.abort(), 8000)
+      const rawRes = await fetch(rawUrl, { signal: ac.signal })
+      clearTimeout(t)
+      if (!rawRes.ok) throw new Error(`Raw file fetch failed: ${rawRes.status}`)
+      const text = await rawRes.text()
+      current = JSON.parse(text)
+    }
 
     const existingArticles = new Set(current.products.map(p => p.article))
     let added = 0
@@ -54,20 +69,22 @@ export default async function handler(req, res) {
 
     const newContent = Buffer.from(JSON.stringify(current, null, 2)).toString('base64')
 
-    const putController = new AbortController()
-    const putTimeout = setTimeout(() => putController.abort(), 8000)
-    const putRes = await fetch(api, {
-      method: 'PUT',
-      headers,
-      signal: putController.signal,
-      body: JSON.stringify({
-        message: `feat: merge ${added} new products from CSV upload`,
-        content: newContent,
-        sha: file.sha
+    {
+      const ac = new AbortController()
+      const t = setTimeout(() => ac.abort(), 8000)
+      const putRes = await fetch(apiBase, {
+        method: 'PUT',
+        headers,
+        signal: ac.signal,
+        body: JSON.stringify({
+          message: `feat: merge ${added} new products from CSV upload`,
+          content: newContent,
+          sha
+        })
       })
-    })
-    clearTimeout(putTimeout)
-    if (!putRes.ok) throw new Error(`GitHub PUT failed: ${putRes.status}`)
+      clearTimeout(t)
+      if (!putRes.ok) throw new Error(`GitHub PUT failed: ${putRes.status}`)
+    }
 
     return res.json({ success: true, added, total: current.products.length })
   } catch (err) {

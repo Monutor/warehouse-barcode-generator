@@ -25,8 +25,12 @@ export default async function handler(req, res) {
   const api = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`
   const headers = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' }
 
+  const controller = new AbortController()
+  const ghTimeout = setTimeout(() => controller.abort(), 8000)
+
   try {
-    const getRes = await fetch(`${api}?ref=main`, { headers })
+    const getRes = await fetch(`${api}?ref=main`, { headers, signal: controller.signal })
+    clearTimeout(ghTimeout)
     if (!getRes.ok) throw new Error(`GitHub GET failed: ${getRes.status}`)
     const file = await getRes.json()
     const current = JSON.parse(Buffer.from(file.content, 'base64').toString())
@@ -50,19 +54,26 @@ export default async function handler(req, res) {
 
     const newContent = Buffer.from(JSON.stringify(current, null, 2)).toString('base64')
 
+    const putController = new AbortController()
+    const putTimeout = setTimeout(() => putController.abort(), 8000)
     const putRes = await fetch(api, {
       method: 'PUT',
       headers,
+      signal: putController.signal,
       body: JSON.stringify({
         message: `feat: merge ${added} new products from CSV upload`,
         content: newContent,
         sha: file.sha
       })
     })
+    clearTimeout(putTimeout)
     if (!putRes.ok) throw new Error(`GitHub PUT failed: ${putRes.status}`)
 
     return res.json({ success: true, added, total: current.products.length })
   } catch (err) {
+    if (err.name === 'AbortError') {
+      return res.status(502).json({ error: 'GitHub API timeout — попробуйте загрузить меньшую порцию товаров' })
+    }
     return res.status(502).json({ error: err.message })
   }
 }

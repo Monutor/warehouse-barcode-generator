@@ -925,7 +925,7 @@ const app = Vue.createApp({
               const article = String(row['Код товара']).trim();
               const name = String(row['Наименование']).trim();
               const barcode = String(row['ШК товара']).trim();
-              if (!article || !barcode) continue;
+              if (!article || !name || !barcode || name === 'undefined') continue;
               if (dataLayer.productByArticle.has(article)) continue;
               if (seenArticles.has(article)) continue;
               seenArticles.add(article);
@@ -968,7 +968,7 @@ const app = Vue.createApp({
             const article = cols[artIdx];
             const name = cols[nameIdx];
             const barcode = cols[barcodeIdx];
-            if (!article || !barcode) continue;
+            if (!article || !name || !barcode || name === 'undefined') continue;
             if (dataLayer.productByArticle.has(article)) continue;
             if (seenArticles.has(article)) continue;
             seenArticles.add(article);
@@ -993,7 +993,14 @@ const app = Vue.createApp({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ products: this.uploadedNewProducts })
         });
-        const data = await res.json();
+        const contentType = res.headers.get('content-type') || '';
+        let data;
+        if (contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          throw new Error(`Сервер вернул ошибку ${res.status}: ${text.substring(0, 300)}`);
+        }
         if (!res.ok) throw new Error(data.error || 'Server error');
         this.uploadResult = data;
         this.uploadStep = 'done';

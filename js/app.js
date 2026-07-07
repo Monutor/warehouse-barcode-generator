@@ -241,7 +241,7 @@ class DataLayer {
   }
 
   async loadProducts() {
-    const resp = await fetch('data/products.json');
+    const resp = await fetch('https://raw.githubusercontent.com/Monutor/warehouse-barcode-generator/main/data/products.json');
     if (!resp.ok) return null;
     const data = await resp.json();
     this.products = data.products || [];

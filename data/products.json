@@ -1,6 +1,6 @@
 {
-  "version": 1783511937249,
-  "updatedAt": "2026-07-08T11:58:57.249Z",
+  "version": 1783615968087,
+  "updatedAt": "2026-07-09T16:52:48.087Z",
   "products": [
     {
       "article": "400249707",
@@ -64911,6 +64911,171 @@
       "article": "400255588",
       "name": "Э/щипцы Hi HST-727",
       "barcode": "4660263984002"
+    },
+    {
+      "article": "400292014",
+      "name": "DW Candy CP 6F51LS-08",
+      "barcode": "6925777874439"
+    },
+    {
+      "article": "400775946",
+      "name": "(А)Антенна Denn DAA200U",
+      "barcode": "2040077594611"
+    },
+    {
+      "article": "400837895",
+      "name": "(А)Антенна Denn DAA235",
+      "barcode": "2040083789513"
+    },
+    {
+      "article": "401248171",
+      "name": "(А)Антенна Denn DAA250",
+      "barcode": "2040124817113"
+    },
+    {
+      "article": "401259845",
+      "name": "(А)Антенна Denn DAE601",
+      "barcode": "2040125984517"
+    },
+    {
+      "article": "401250255",
+      "name": "(А)Антенна Denn DAE603",
+      "barcode": "2040125025517"
+    },
+    {
+      "article": "4269949",
+      "name": "(А)В/Г/пан. Midea MG699TX",
+      "barcode": "693996263178365284"
+    },
+    {
+      "article": "400513933",
+      "name": "(А)Массажер WEASTRO MGSM-004M Bl",
+      "barcode": "6974099563279"
+    },
+    {
+      "article": "400513934",
+      "name": "(А)Массажер WEASTRO MP-1008NWC",
+      "barcode": "6974099893734"
+    },
+    {
+      "article": "401248788",
+      "name": "(А)Подвес д/TV Barkan BK40FM",
+      "barcode": "2040124878817"
+    },
+    {
+      "article": "400481108",
+      "name": "(А)Подвес д/TV Rexant 38-0095",
+      "barcode": "4601004148239"
+    },
+    {
+      "article": "400499817",
+      "name": "(А)Подвес д/TV Rexant 38-0332",
+      "barcode": "4601004148178"
+    },
+    {
+      "article": "4256149",
+      "name": "(А)Суш.маш. Candy ROE H11A2TCEX-07",
+      "barcode": "805901905380630293"
+    },
+    {
+      "article": "400519822",
+      "name": "(А)ЭЧ FuturoHome MTR KP-500W",
+      "barcode": "4657821647134"
+    },
+    {
+      "article": "20091413",
+      "name": "(И)VC Samsung VR7MD97714G",
+      "barcode": "2002009141317"
+    },
+    {
+      "article": "400751443",
+      "name": "(МП)DVR TrendVision Комбо Ф10 CPL Bl",
+      "barcode": "0462718802494"
+    },
+    {
+      "article": "400306501",
+      "name": "(МП)MG Brayer BR1609",
+      "barcode": "912009933492154922"
+    },
+    {
+      "article": "401986323",
+      "name": "(МП)PDA Google Pixel 10a Fog",
+      "barcode": "204019863231575962"
+    },
+    {
+      "article": "400683527",
+      "name": "(МП)PDA HONOR X8d 8/256GB BLACK",
+      "barcode": "693652088623422241"
+    },
+    {
+      "article": "400557310",
+      "name": "(МП)TV Samsung QE75Q7FAAUXRU",
+      "barcode": "880609716679522241"
+    },
+    {
+      "article": "400888009",
+      "name": "(МП)VC roborock Saros 10R с системой нап",
+      "barcode": "693690590461470199"
+    },
+    {
+      "article": "400534810",
+      "name": "(МП)Блендер Bosch MSM4W210 Wh",
+      "barcode": "424200539849222241"
+    },
+    {
+      "article": "400732988",
+      "name": "(МП)Блендер Scarlett SC-HB42M47 Bl",
+      "barcode": "2040073298834"
+    },
+    {
+      "article": "4280869",
+      "name": "(МП)Блок Newtek NT-65CHB09 (in)",
+      "barcode": "4680353024708"
+    },
+    {
+      "article": "4281020",
+      "name": "(МП)Блок Newtek NT-65CHB09 (out)",
+      "barcode": "4680353024715"
+    },
+    {
+      "article": "401209261",
+      "name": "(МП)Вакуумизатор PrimeHome АР-11 Bl",
+      "barcode": "203873023336674271"
+    },
+    {
+      "article": "400268768",
+      "name": "(МП)В/выт. Krona KAMILLA T 500 INOX",
+      "barcode": "4260713272255"
+    },
+    {
+      "article": "400466726",
+      "name": "(МП)Мон. Thunderobot DF27C240L",
+      "barcode": "693206630629822241"
+    },
+    {
+      "article": "401043746",
+      "name": "(МП)Наушники True Wireless Samsung Galax",
+      "barcode": "880609565465254123"
+    },
+    {
+      "article": "400506557",
+      "name": "(МП)СЗУ Samsung EP-T2510 25W Type-C Wh",
+      "barcode": "880609489951154123"
+    },
+    {
+      "article": "400368580",
+      "name": "(МП)ЭЧ Scarlett SC-EK27G90",
+      "barcode": "505037032389162418"
+    },
+    {
+      "article": "400001654",
+      "name": "(МП)ЭЧ Яромир ЯР-1058",
+      "barcode": "4690597216586"
+    },
+    {
+      "article": "400415998",
+      "name": "(МП)Э/щипцы Melon Pro Lamia Ceramic",
+      "barcode": "200076344976263117"
     }
   ]
 }

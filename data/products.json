@@ -1,6 +1,6 @@
 {
-  "version": 1783851343509,
-  "updatedAt": "2026-07-12T10:15:43.509Z",
+  "version": 1783915396587,
+  "updatedAt": "2026-07-13T04:03:16.587Z",
   "products": [
     {
       "article": "400249707",
@@ -73611,6 +73611,116 @@
       "article": "400395269",
       "name": "ЭЧ Vixter KTP-1245",
       "barcode": "4660216248014"
+    },
+    {
+      "article": "400468788",
+      "name": "(А)MG Белвар КЭМ-36/220-4-30",
+      "barcode": "4810457001668"
+    },
+    {
+      "article": "400409877",
+      "name": "(А)В/выт. Kuppersberg BIM 600 Bl",
+      "barcode": "2040040987716"
+    },
+    {
+      "article": "4269899",
+      "name": "(А)ЭЧ Midea MK-9094",
+      "barcode": "693671833228465284"
+    },
+    {
+      "article": "30071316",
+      "name": "(В)PDA Ap. 15PM 256GB NlTi(без RuStore)",
+      "barcode": "2003007131614"
+    },
+    {
+      "article": "401265784",
+      "name": "(МП)GP Microsoft XBOX Controller Black B",
+      "barcode": "204012657841873459"
+    },
+    {
+      "article": "400774438",
+      "name": "(МП)MW BBK 20MWS-709M/B Bl",
+      "barcode": "489705528364157768"
+    },
+    {
+      "article": "401529300",
+      "name": "(МП)PDA Honor X9d 12+256GB черны Bl",
+      "barcode": "204015293001375046"
+    },
+    {
+      "article": "401417503",
+      "name": "(МП)PDA Honor Смартфон 600 Lite 8/256GB",
+      "barcode": "204014175031875046"
+    },
+    {
+      "article": "400693881",
+      "name": "(МП)VC Superare W07-2 Gp/Gr",
+      "barcode": "204006938811271023"
+    },
+    {
+      "article": "400484085",
+      "name": "(МП)А/гриль Gressel GAF-1822",
+      "barcode": "465031970223047500"
+    },
+    {
+      "article": "401169192",
+      "name": "(МП)А/гриль TIFFANY TF-123 Bl",
+      "barcode": "204011691921467845"
+    },
+    {
+      "article": "400562229",
+      "name": "(МП)Блендер Smeg BLC01BLMEU",
+      "barcode": "801770933119158755"
+    },
+    {
+      "article": "4190773",
+      "name": "(МП)Вентил. Oasis VF-40PWG",
+      "barcode": "4640130901172"
+    },
+    {
+      "article": "400087786",
+      "name": "(МП)ИП Kitfort КТ-158",
+      "barcode": "463001795162831294"
+    },
+    {
+      "article": "400135350",
+      "name": "(МП)Кастрюля Webber BE-143/2",
+      "barcode": "4690597181815"
+    },
+    {
+      "article": "400837571",
+      "name": "(МП)К/памяти TESLA TSLU1 no",
+      "barcode": "460719233491171122"
+    },
+    {
+      "article": "401418564",
+      "name": "(МП)Набор АвтоИмидж набор инструментов Y",
+      "barcode": "204014185641668692"
+    },
+    {
+      "article": "400514582",
+      "name": "(МП)Реноватор Oasis MIR-40 (G)",
+      "barcode": "464013091632948845"
+    },
+    {
+      "article": "400537733",
+      "name": "(МП)СЗУ Samsung EP-T2510 25W Wh",
+      "barcode": "880609489949854123"
+    },
+    {
+      "article": "400411063",
+      "name": "(МП)Смесит. Teymi T10267",
+      "barcode": "467374259648159261"
+    },
+    {
+      "article": "402009107",
+      "name": "(МП)Фен supersonic hair dryer HD-001 Bl",
+      "barcode": "204020091071471467"
+    },
+    {
+      "article": "400581501",
+      "name": "(МП)Э/Сушка Proliss суш01",
+      "barcode": "204005815011968692"
     }
   ]
 }

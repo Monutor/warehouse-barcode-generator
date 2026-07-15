@@ -1,6 +1,6 @@
 {
-  "version": 1783915430903,
-  "updatedAt": "2026-07-13T04:03:50.904Z",
+  "version": 1784091386529,
+  "updatedAt": "2026-07-15T04:56:26.529Z",
   "products": [
     {
       "article": "400249707",
@@ -73721,6 +73721,251 @@
       "article": "400581501",
       "name": "(МП)Э/Сушка Proliss суш01",
       "barcode": "204005815011968692"
+    },
+    {
+      "article": "4257164",
+      "name": "(А)В/выт. Haier HVX-W672GBX",
+      "barcode": "692577780116930293"
+    },
+    {
+      "article": "4257170",
+      "name": "(А)В/выт. Haier HVX-W692GW",
+      "barcode": "692577780156530293"
+    },
+    {
+      "article": "4256292",
+      "name": "(А)В/Г/пан. Candy CHXG64CNB",
+      "barcode": "697211988115030293"
+    },
+    {
+      "article": "400479611",
+      "name": "(А)В/Э/шкаф Vard VOE432B",
+      "barcode": "4607097711206"
+    },
+    {
+      "article": "401174647",
+      "name": "(А)Папка Mark Ryden L_MR67D_37",
+      "barcode": "4673753543917"
+    },
+    {
+      "article": "400476075",
+      "name": "(А)ПДУ Rexant 38-0002",
+      "barcode": "4601004278714"
+    },
+    {
+      "article": "400473171",
+      "name": "(А)Сет.шнур Rexant 11-1106",
+      "barcode": "4660008018184"
+    },
+    {
+      "article": "400473173",
+      "name": "(А)Сет.шнур Rexant 11-1107",
+      "barcode": "4660008018191"
+    },
+    {
+      "article": "401174712",
+      "name": "(А)Сумка Mark Ryden C_MR276D_00",
+      "barcode": "4673753543924"
+    },
+    {
+      "article": "401174735",
+      "name": "(А)Сумка Mark Ryden L_MR98D_37",
+      "barcode": "4673753543931"
+    },
+    {
+      "article": "401174684",
+      "name": "(А)Сумка Mark Ryden MR8001D_00",
+      "barcode": "4673753543900"
+    },
+    {
+      "article": "401872180",
+      "name": "(А)Сумка Mark Ryden MR8003_00 Bl",
+      "barcode": "4673753543801"
+    },
+    {
+      "article": "30070447",
+      "name": "(В)PDA Ap. 14 128GB Midn(без RuStore)",
+      "barcode": "2003007044716"
+    },
+    {
+      "article": "30083824",
+      "name": "(В)PDA realme GT 6 12/256GB S",
+      "barcode": "2003008382411"
+    },
+    {
+      "article": "30084151",
+      "name": "(В)PDA Xiaomi MI 11 ULTRA 8/256GB Wh",
+      "barcode": "2003008415119"
+    },
+    {
+      "article": "401052287",
+      "name": "В/RF BOSCH KBN96ADD0",
+      "barcode": "4242005375158"
+    },
+    {
+      "article": "400469681",
+      "name": "В/выт. Gorenje TH60E8SGB",
+      "barcode": "3838782996771"
+    },
+    {
+      "article": "20031050",
+      "name": "ГП Darina 1D GM141 002W",
+      "barcode": "2110026530233"
+    },
+    {
+      "article": "401334912",
+      "name": "(МП)MW Harper Микроволновая печь с гриле",
+      "barcode": "467014006328730591"
+    },
+    {
+      "article": "401414068",
+      "name": "(МП)PDA Honor Смартфон X6c 6+256Gb чёрн",
+      "barcode": "204014140681974830"
+    },
+    {
+      "article": "400386674",
+      "name": "(МП)VC BBK BV1505",
+      "barcode": "4897055286130"
+    },
+    {
+      "article": "400419019",
+      "name": "(МП)VM DJI Osmo Pocket 3 Creator Combo",
+      "barcode": "204004190191964462"
+    },
+    {
+      "article": "4205034",
+      "name": "(МП)WM Indesit IWUB 4105 (CIS)",
+      "barcode": "800784262916322241"
+    },
+    {
+      "article": "401427570",
+      "name": "(МП)А/гриль Xiaomi Smart Air Fryer N1 (M",
+      "barcode": "204014275701969363"
+    },
+    {
+      "article": "400985367",
+      "name": "(МП)Блендер Bosch MSM6B100",
+      "barcode": "424200242011068123"
+    },
+    {
+      "article": "4282032",
+      "name": "(МП)Блок Bufett AS-H18/AC806 in",
+      "barcode": "4251996408066"
+    },
+    {
+      "article": "4282033",
+      "name": "(МП)Блок Bufett AS-H18/AC806 out",
+      "barcode": "2000428203319"
+    },
+    {
+      "article": "4186604",
+      "name": "(МП)В/MW ZUGEL ZMO201W",
+      "barcode": "4655752930332"
+    },
+    {
+      "article": "400503572",
+      "name": "(МП)В/выт. ZUGEL ZHI525B",
+      "barcode": "461021658189558909"
+    },
+    {
+      "article": "400110501",
+      "name": "(МП)В/Г/пан. ZUGEL ZGH451B",
+      "barcode": "465575293027158909"
+    },
+    {
+      "article": "401315060",
+      "name": "(МП)В/дув нет бренда Воздуходувка аккуму",
+      "barcode": "204750197954971513"
+    },
+    {
+      "article": "400438891",
+      "name": "(МП)Вентил. Centek CT-5044",
+      "barcode": "468035303190440100"
+    },
+    {
+      "article": "401043976",
+      "name": "(МП)Видеоигра PlayStation Cuphead (русск",
+      "barcode": "275723697114470732"
+    },
+    {
+      "article": "400474732",
+      "name": "(МП)Дрель Oasis DU-71 Eco",
+      "barcode": "4640130963989"
+    },
+    {
+      "article": "400475316",
+      "name": "(МП)ИП Oasis PI-SJFE",
+      "barcode": "4670222832756"
+    },
+    {
+      "article": "400321876",
+      "name": "(МП)Кабель Havit CB6235 Wh",
+      "barcode": "695067621660848406"
+    },
+    {
+      "article": "400478280",
+      "name": "(МП)Кофемаш. Enso K130",
+      "barcode": "467375301702965342"
+    },
+    {
+      "article": "400712782",
+      "name": "(МП)МФУ HP Laser MFP 137fnw",
+      "barcode": "204406884165468292"
+    },
+    {
+      "article": "400714188",
+      "name": "(МП)Обогрев. Sonnen DFS-9E",
+      "barcode": "4606224486468"
+    },
+    {
+      "article": "401150196",
+      "name": "(МП)Отпар. LOWENGRASS / Bl",
+      "barcode": "204011501961867845"
+    },
+    {
+      "article": "401763792",
+      "name": "(МП)Очки Ray-Ban Очки солнцезащитные RB",
+      "barcode": "205180795947175925"
+    },
+    {
+      "article": "4105678",
+      "name": "(МП)Триммер Centek CT-2178",
+      "barcode": "4680353005462"
+    },
+    {
+      "article": "401005005",
+      "name": "(МП)Триммер для стрижки PHILIPS QP2824/1",
+      "barcode": "204010050051070090"
+    },
+    {
+      "article": "401883247",
+      "name": "(МП)Утюг GROOVIER утюг_1 Sl/Bl",
+      "barcode": "204973034266874162"
+    },
+    {
+      "article": "400476562",
+      "name": "(МП)Цифр.пианино Tesler STZ-8805 Sm/Oak",
+      "barcode": "468720626571440812"
+    },
+    {
+      "article": "400475152",
+      "name": "(МП)ЭЧ Polaris PWK 1797CGL Water Way Pro",
+      "barcode": "505553917924122241"
+    },
+    {
+      "article": "50185023",
+      "name": "(У)AS Defender Solar 1",
+      "barcode": "2005018502315"
+    },
+    {
+      "article": "40079854",
+      "name": "(У)GC Sony PS5 Slim 1TB Blu-Ray Edition",
+      "barcode": "2004007985412"
+    },
+    {
+      "article": "30099262",
+      "name": "(У)Ламинатор DELI 3897",
+      "barcode": "2003009926218"
     }
   ]
 }

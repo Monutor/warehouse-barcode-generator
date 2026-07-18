@@ -329,7 +329,8 @@ class DataLayer {
       totalSections: sections.size,
       totalShelves,
       totalPallets,
-      totalZones
+      totalZones,
+      totalProducts: this.products.length
     };
   }
 }
@@ -357,7 +358,7 @@ const app = Vue.createApp({
       printProductLoading: false,
       error: null,
       loading: true,
-      stats: { totalSections: 0, totalShelves: 0, totalPallets: 0, totalZones: 0 },
+      stats: { totalSections: 0, totalShelves: 0, totalPallets: 0, totalZones: 0, totalProducts: 0 },
       dataVersion: '',
       dataUpdatedAt: '',
       isDark: false,
@@ -375,6 +376,12 @@ const app = Vue.createApp({
       barcodeMode: 'shelf',
       productSearchOpen: false,
       productSearchArticle: '',
+      productPanelOpen: false,
+      productPanelBarcodeSvg: '',
+      productPanelBarcodePng: null,
+      productPanelBarcodeJpg: null,
+      productPanelBarcodeLoading: false,
+      productPanelBarcodeError: null,
       productUploadOpen: false,
       uploadStep: 'idle', // idle | preview | uploading | done | error
       uploadedNewProducts: [],
@@ -650,6 +657,7 @@ const app = Vue.createApp({
       this.barcodeJpg = null;
       this.barcodeLoading = true;
       this.barcodeModalOpen = true;
+      this.productPanelOpen = false;
       try {
         await this.generateBarcode(shelf);
       } finally {
@@ -669,6 +677,42 @@ const app = Vue.createApp({
     closeProductSearch() {
       this.productSearchOpen = false;
       this.productSearchArticle = '';
+    },
+
+    openProductPanel() {
+      vibrate();
+      this.productPanelOpen = true;
+      this.productSearchArticle = '';
+      this.productPanelBarcodeSvg = '';
+      this.productPanelBarcodePng = null;
+      this.productPanelBarcodeJpg = null;
+      this.productPanelBarcodeError = null;
+    },
+
+    closeProductPanel() {
+      this.productPanelOpen = false;
+      this.productSearchArticle = '';
+    },
+
+    async selectProductInPanel(product) {
+      vibrate();
+      this.productPanelBarcodeError = null;
+      this.productPanelBarcodeSvg = '';
+      this.productPanelBarcodePng = null;
+      this.productPanelBarcodeJpg = null;
+      this.productPanelBarcodeLoading = true;
+      try {
+        const barcode = product.barcode || transliterate(product.name);
+        const text = product.name + ' | ' + product.article;
+        const result = await barcodeGenerator.generate(barcode, text);
+        this.productPanelBarcodeSvg = result.svg;
+        this.productPanelBarcodePng = result.pngDataUrl;
+        this.productPanelBarcodeJpg = result.jpgDataUrl;
+      } catch (e) {
+        this.productPanelBarcodeError = e.message || 'Ошибка генерации штрих-кода';
+      } finally {
+        this.productPanelBarcodeLoading = false;
+      }
     },
 
     async selectProduct(product) {
@@ -691,6 +735,8 @@ const app = Vue.createApp({
     closeBarcodeModal() {
       this.barcodeModalOpen = false;
       this.barcodeMode = 'shelf';
+      this.productPanelOpen = false;
+      this.productSearchArticle = '';
     },
 
     downloadBarcode() {
@@ -1011,6 +1057,11 @@ const app = Vue.createApp({
         }
         if (!res.ok) throw new Error(data.error || 'Server error');
         this.uploadResult = data;
+        for (const p of this.uploadedNewProducts) {
+          dataLayer.products.push(p);
+          dataLayer.productByArticle.set(p.article, p);
+        }
+        this.stats = dataLayer.getStats();
         this.uploadStep = 'done';
       } catch (err) {
         this.uploadResult = { error: err.message };

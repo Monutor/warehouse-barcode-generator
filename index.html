@@ -65,6 +65,7 @@
         <div class="stat-card"><div class="num">{{ stats.totalShelves }}</div><div class="label">Стеллажей</div></div>
         <div class="stat-card"><div class="num">{{ stats.totalPallets }}</div><div class="label">Поддонов</div></div>
         <div class="stat-card"><div class="num">{{ stats.totalZones }}</div><div class="label">Зон</div></div>
+        <div class="stat-card"><div class="num">{{ stats.totalProducts }}</div><div class="label">Товаров</div></div>
       </div>
       <div v-if="formattedDataDate" class="text-muted small text-center mb-3">База обновлена: {{ formattedDataDate }}</div>
 
@@ -364,30 +365,73 @@
 
     <!-- Barcode modal -->
     <div v-if="barcodeModalOpen" class="modal d-block modal-overlay" tabindex="-1" @click.self="closeBarcodeModal">
-      <div class="barcode-modal-dialog">
+      <div class="barcode-modal-dialog" :class="{'barcode-modal-dialog--split': productPanelOpen}">
         <div class="barcode-modal-header">
-          <span class="barcode-modal-title" v-if="barcodeMode === 'product'">{{ currentBarcodeShelf?.name }} <small class="text-muted">(Арт. {{ currentBarcodeShelf?.article }})</small></span>
-          <span class="barcode-modal-title" v-else>{{ currentBarcodeShelf?.name || '' }}</span>
+          <div class="barcode-modal-header-left">
+            <span class="barcode-modal-title" v-if="barcodeMode === 'product'">{{ currentBarcodeShelf?.name }} <small class="text-muted">(Арт. {{ currentBarcodeShelf?.article }})</small></span>
+            <span class="barcode-modal-title" v-else>{{ currentBarcodeShelf?.name || '' }}</span>
+          </div>
+          <button v-if="!productPanelOpen" type="button" class="btn btn-sm btn-outline-primary barcode-header-toggle" @click="openProductPanel">ШК товара → </button>
+          <button v-else type="button" class="btn btn-sm btn-outline-primary barcode-header-toggle" @click="closeProductPanel">← Назад</button>
           <button type="button" class="barcode-modal-close" @click="closeBarcodeModal">×</button>
         </div>
-        <div class="barcode-modal-body text-center">
-          <div v-if="barcodeLoading" class="py-4">
+        <div class="barcode-modal-body" :class="{'barcode-modal-body--split': productPanelOpen, 'text-center': !productPanelOpen}">
+          <div v-if="barcodeLoading && !productPanelOpen" class="py-4">
             <div class="spinner-border text-primary" role="status"></div>
             <p class="mt-2 text-muted">Генерация штрих-кода...</p>
           </div>
-          <div v-else-if="barcodeError" class="text-danger">{{ barcodeError }}</div>
-          <div v-else-if="barcodeSvg" class="barcode-modal-content">
+          <div v-else-if="barcodeError && !productPanelOpen" class="text-danger">{{ barcodeError }}</div>
+          <div v-else-if="barcodeSvg && !productPanelOpen" class="barcode-modal-content">
             <div v-html="barcodeSvg"></div>
           </div>
-        </div>
-        <div class="barcode-modal-footer" v-if="!barcodeLoading && !barcodeError">
-          <div class="d-flex align-items-center gap-1">
-            <div class="barcode-format-toggle btn-group btn-group-sm" role="group">
-              <button type="button" class="btn btn-outline-primary" :class="{'active': downloadFormat === 'png'}" @click="downloadFormat = 'png'">PNG</button>
-              <button type="button" class="btn btn-outline-primary" :class="{'active': downloadFormat === 'jpg'}" @click="downloadFormat = 'jpg'">JPG</button>
+
+          <template v-if="productPanelOpen">
+            <div class="barcode-left-panel">
+              <div v-if="barcodeLoading" class="py-4">
+                <div class="spinner-border text-primary" role="status"></div>
+              </div>
+              <div v-else-if="barcodeError" class="text-danger small">{{ barcodeError }}</div>
+              <div v-else-if="barcodeSvg" class="barcode-modal-content">
+                <div v-html="barcodeSvg"></div>
+              </div>
             </div>
-            <button type="button" class="btn btn-outline-primary barcode-btn-download" @click="downloadBarcode">⬇ Скачать</button>
+            <div class="barcode-right-panel">
+              <div class="barcode-right-panel-title">Артикул товара</div>
+              <input type="text" class="form-control" v-model="productSearchArticle" placeholder="Введите артикул..." />
+              <template v-for="product in foundProducts" :key="product.article">
+                <div class="shelf-card" @click="selectProductInPanel(product)">
+                  <div class="product-info">
+                    <div class="product-info-name">{{ product.name }}</div>
+                    <div class="product-info-meta">
+                      <span class="product-info-article">Арт. {{ product.article }}</span>
+                      <span class="product-info-barcode">ШК {{ product.barcode }}</span>
+                    </div>
+                  </div>
+                  <span class="icons">▶</span>
+                </div>
+              </template>
+              <div v-if="productSearchArticle.trim() && foundProducts.length === 0 && notFoundArticles.length > 0" class="text-center text-muted small py-2">
+                Не найден
+              </div>
+              <div v-if="notFoundArticles.length > 0 && foundProducts.length > 0" class="text-center text-muted small">
+                Не найдены: {{ notFoundArticles.join(', ') }}
+              </div>
+              <div v-if="productPanelBarcodeLoading" class="text-center py-3">
+                <div class="spinner-border text-primary" style="width:1.5rem;height:1.5rem;" role="status"></div>
+              </div>
+              <div v-else-if="productPanelBarcodeError" class="text-danger small">{{ productPanelBarcodeError }}</div>
+              <div v-else-if="productPanelBarcodeSvg" class="barcode-modal-content">
+                <div v-html="productPanelBarcodeSvg"></div>
+              </div>
+            </div>
+          </template>
+        </div>
+        <div class="barcode-modal-footer" v-if="!barcodeLoading || productPanelOpen">
+          <div class="barcode-format-toggle btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-primary" :class="{'active': downloadFormat === 'png'}" @click="downloadFormat = 'png'">PNG</button>
+            <button type="button" class="btn btn-outline-primary" :class="{'active': downloadFormat === 'jpg'}" @click="downloadFormat = 'jpg'">JPG</button>
           </div>
+          <button type="button" class="btn btn-outline-primary barcode-btn-download" @click="downloadBarcode">⬇ Скачать</button>
           <button type="button" class="btn btn-primary barcode-btn-print" @click="printOne(currentBarcodeShelf)">🖨 Печать</button>
         </div>
       </div>

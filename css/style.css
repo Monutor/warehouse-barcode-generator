@@ -149,6 +149,20 @@ button {
   margin-bottom: 24px;
 }
 
+.stats-grid .stat-card:last-child {
+  grid-column: span 4;
+}
+
+@media screen and (max-width: 576px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-grid .stat-card:last-child {
+    grid-column: span 2;
+  }
+}
+
 .stat-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
@@ -441,6 +455,12 @@ button {
 /* ===== Shelf grid 3 columns ===== */
 .shelf-grid--three-col {
   grid-template-columns: repeat(3, 1fr);
+}
+
+@media screen and (max-width: 576px) {
+  .shelf-grid--three-col {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ===== Section divider ===== */
@@ -844,6 +864,7 @@ button {
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
 }
 
 [data-theme="dark"] .barcode-modal-dialog {
@@ -854,9 +875,25 @@ button {
 .barcode-modal-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 16px 20px;
   border-bottom: 1px solid var(--card-border);
+}
+
+.barcode-modal-header .barcode-modal-close {
+  margin-left: 30px;
+}
+
+.barcode-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.barcode-header-toggle {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 [data-theme="dark"] .barcode-modal-header {
@@ -870,7 +907,6 @@ button {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: calc(100% - 40px);
 }
 
 .barcode-modal-close {
@@ -982,6 +1018,76 @@ button {
   .barcode-modal-footer {
     padding: 14px 20px;
   }
+}
+
+/* ===== Product panel in barcode modal ===== */
+.barcode-modal-dialog--split {
+  max-width: 780px;
+}
+
+.barcode-modal-body--split {
+  display: flex;
+  gap: 0;
+  padding: 0;
+  min-height: 320px;
+}
+
+@media screen and (max-width: 730px) {
+  .barcode-modal-body--split {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+.barcode-left-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 14px;
+  border-right: 1px solid var(--card-border);
+}
+
+[data-theme="dark"] .barcode-left-panel {
+  border-right-color: #333333;
+}
+
+.barcode-left-panel .barcode-modal-content {
+  width: 100%;
+}
+
+.barcode-right-panel {
+  width: 340px;
+  flex-shrink: 0;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.barcode-right-panel .form-control {
+  width: 100%;
+}
+
+.barcode-right-panel .barcode-modal-content {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.barcode-right-panel .barcode-modal-content svg {
+  max-width: 280px;
+}
+
+.barcode-right-panel-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* ===== Barcode in modal ===== */

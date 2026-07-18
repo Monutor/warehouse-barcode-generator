@@ -50,11 +50,12 @@ self.addEventListener('fetch', (event) => {
   if (url.origin.includes('cdn.jsdelivr.net')) {
     event.respondWith(
       caches.match(event.request).then((response) => {
-        return response || fetch(event.request).then((networkResponse) => {
+          return response || fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.ok) {
+            const responseToCache = networkResponse.clone();
             caches.open(CDN_CACHE_NAME).then((cache) => {
-              cache.put(event.request, networkResponse.clone());
-            });
+              cache.put(event.request, responseToCache);
+            }).catch(() => {});
           }
           return networkResponse;
         }).catch(() => caches.match(event.request));

@@ -1,6 +1,6 @@
 {
-  "version": 1784091386529,
-  "updatedAt": "2026-07-15T04:56:26.529Z",
+  "version": 1784407975021,
+  "updatedAt": "2026-07-18T20:52:55.021Z",
   "products": [
     {
       "article": "400249707",
@@ -73966,6 +73966,226 @@
       "article": "30099262",
       "name": "(У)Ламинатор DELI 3897",
       "barcode": "2003009926218"
+    },
+    {
+      "article": "401984032",
+      "name": "(А)TV Artel 24AH90G Bl",
+      "barcode": "4780074200440"
+    },
+    {
+      "article": "401784132",
+      "name": "(А)VC RED sol. X22",
+      "barcode": "5061061574812"
+    },
+    {
+      "article": "400746227",
+      "name": "(А)WH Candy CR50V-RM1 INOX Wh",
+      "barcode": "694146738032530293"
+    },
+    {
+      "article": "400723907",
+      "name": "(А)WH Haier ES30V-A2 Wh",
+      "barcode": "461021474143730293"
+    },
+    {
+      "article": "400703962",
+      "name": "(А)WH HAIER ES50V-A2 Wh",
+      "barcode": "461021474144430293"
+    },
+    {
+      "article": "400747444",
+      "name": "(А)WH Haier ES50V-B2 SLIM Wh",
+      "barcode": "461021474167330293"
+    },
+    {
+      "article": "400743127",
+      "name": "(А)WH Haier ES50V-F3C Wh",
+      "barcode": "461021474189530293"
+    },
+    {
+      "article": "400723938",
+      "name": "(А)WH Haier ES80V-A2 Wh",
+      "barcode": "461021474145130293"
+    },
+    {
+      "article": "400747460",
+      "name": "(А)WH Haier ES80V-B2 SLIM Wh",
+      "barcode": "461021474168030293"
+    },
+    {
+      "article": "400743139",
+      "name": "(А)WH Haier ES80V-F3C Wh",
+      "barcode": "461021474190130293"
+    },
+    {
+      "article": "401207256",
+      "name": "(А)А/гриль Gorenje AF1700B черный",
+      "barcode": "3838783100528"
+    },
+    {
+      "article": "4256482",
+      "name": "(А)В/MW Candy CMXBTG218B",
+      "barcode": "697508626918130293"
+    },
+    {
+      "article": "4259071",
+      "name": "(А)В/Э/пан. Gorenje ECS646BCSCE",
+      "barcode": "2000425907111"
+    },
+    {
+      "article": "4280870",
+      "name": "(АИ)Стайлер Dyson HS09 264003-01",
+      "barcode": "2000428087025"
+    },
+    {
+      "article": "401351104",
+      "name": "(А)Кофе Carteire BEANS 6Х800г",
+      "barcode": "4607001774075"
+    },
+    {
+      "article": "401351105",
+      "name": "(А)Кофе Carteire BEANS 6Х800г",
+      "barcode": "4607001774105"
+    },
+    {
+      "article": "401351108",
+      "name": "(А)Кофе Carteire R&G 200гX9",
+      "barcode": "4607001774129"
+    },
+    {
+      "article": "401351106",
+      "name": "(А)Кофе Carteire R&G 200гX9",
+      "barcode": "4607001774099"
+    },
+    {
+      "article": "401351110",
+      "name": "(А)Кофе MONARCH 4024710",
+      "barcode": "4607001774594"
+    },
+    {
+      "article": "401351111",
+      "name": "(А)Кофе MONARCH 4024711",
+      "barcode": "4607001774600"
+    },
+    {
+      "article": "401351109",
+      "name": "(А)Кофе MONARCH BEANS EXPERT 4X1000Г",
+      "barcode": "4607001774563"
+    },
+    {
+      "article": "401351099",
+      "name": "(А)Кофе MONARCH R&G 4X1000Г",
+      "barcode": "4607001772231"
+    },
+    {
+      "article": "30079345",
+      "name": "(И)PDA CAU Samsung S25 Ultra 12/256GB B",
+      "barcode": "8806095871455"
+    },
+    {
+      "article": "401958901",
+      "name": "Кофеварка JVC JK-CF28 Bl/Gr",
+      "barcode": "4895253301273"
+    },
+    {
+      "article": "401436075",
+      "name": "(МП)PDA Redmi A7 Pro 4+128Gb Black Bl",
+      "barcode": "693255449386822241"
+    },
+    {
+      "article": "400476778",
+      "name": "(МП)WM ZUGEL ZWF10140I",
+      "barcode": "461021658167358909"
+    },
+    {
+      "article": "400575000",
+      "name": "(МП)А/гриль DEMIAND DK-2500 White",
+      "barcode": "60356365395163352"
+    },
+    {
+      "article": "400293450",
+      "name": "(МП)В/выт.Elikor Сатурн 60П-180-В1Л",
+      "barcode": "464002811116422241"
+    },
+    {
+      "article": "400486863",
+      "name": "(МП)В/Г/пан. ZUGEL ZGH602B",
+      "barcode": "461021658065222241"
+    },
+    {
+      "article": "4175276",
+      "name": "(МП)Велотрен. Planta FD-BIKE-001",
+      "barcode": "6980201001003"
+    },
+    {
+      "article": "400338980",
+      "name": "(МП)В/Э/пан. Zig & Sh CN 44.6 B",
+      "barcode": "425005562104058947"
+    },
+    {
+      "article": "401221151",
+      "name": "(МП)Замок велосипедный Deli Tools DL5080",
+      "barcode": "382431402900051618"
+    },
+    {
+      "article": "400035064",
+      "name": "(МП)Набор Webber BE-616/6",
+      "barcode": "4690597153966"
+    },
+    {
+      "article": "401068827",
+      "name": "(МП)Парооч. VOXLEN CB-101A Gr",
+      "barcode": "204446218326867787"
+    },
+    {
+      "article": "400424446",
+      "name": "(МП)Стекло Keephone 2039925983684",
+      "barcode": "203992598368463704"
+    },
+    {
+      "article": "400468005",
+      "name": "(МП)Суш.маш. ZUGEL ZDF82HP",
+      "barcode": "461021658169758909"
+    },
+    {
+      "article": "400999433",
+      "name": "(МП)Триммер для стрижки Zofft T300 Bl",
+      "barcode": "466021852168962783"
+    },
+    {
+      "article": "400547389",
+      "name": "(МП)Щетка Bufett SSM745 Wh",
+      "barcode": "425199640745864638"
+    },
+    {
+      "article": "400547390",
+      "name": "(МП)Щетка Bufett SSM746 Wh",
+      "barcode": "425199640746564638"
+    },
+    {
+      "article": "400547391",
+      "name": "(МП)Щетка Bufett SSM747 Wh",
+      "barcode": "425199640747264638"
+    },
+    {
+      "article": "401926364",
+      "name": "(МП)эспандер для пальцев SR-072",
+      "barcode": "204019263641874687"
+    },
+    {
+      "article": "401927561",
+      "name": "(МП)эспандер пружинный ST-13, черный",
+      "barcode": "204019275611674687"
+    },
+    {
+      "article": "401176230",
+      "name": "Точилка Rondell RD-2005 Bl",
+      "barcode": "4630143175530"
+    },
+    {
+      "article": "401766503",
+      "name": "(У)Кофеварка Tefal CM600810",
+      "barcode": "2040176650317"
     }
   ]
 }

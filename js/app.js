@@ -386,6 +386,11 @@ const app = Vue.createApp({
       uploadStep: 'idle', // idle | preview | uploading | done | error
       uploadedNewProducts: [],
       uploadResult: null,
+      qrScannerOpen: false,
+      qrScannerState: 'idle', // idle | scanning | result | error
+      qrScanResult: null,
+      qrScanError: null,
+      qrVideoReady: false,
     };
   },
 
@@ -739,6 +744,13 @@ const app = Vue.createApp({
       this.productSearchArticle = '';
     },
 
+    rescanQr() {
+      this.closeBarcodeModal();
+      this.$nextTick(() => {
+        this.openQrScanner();
+      });
+    },
+
     downloadBarcode() {
       const dataUrl = this.downloadFormat === 'jpg' ? this.barcodeJpg : this.barcodePng;
       if (!dataUrl) return;
@@ -1069,6 +1081,140 @@ const app = Vue.createApp({
       }
     },
 
+    openQrScanner() {
+      vibrate();
+      this.qrScannerOpen = true;
+      this.qrScannerState = 'scanning';
+      this.qrScanError = null;
+      this.qrVideoReady = false;
+      console.log('[QR] Opening scanner');
+      this.$nextTick(() => {
+        this.initQrScanner();
+      });
+    },
+
+    initQrScanner() {
+      if (typeof Html5Qrcode === 'undefined') {
+        this.qrScanError = 'Библиотека сканирования не загружена. Обновите страницу.';
+        this.qrScannerState = 'error';
+        return;
+      }
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        this.qrScanError = 'Ваш браузер не поддерживает доступ к камере. Попробуйте Chrome, Firefox или Edge.';
+        this.qrScannerState = 'error';
+        return;
+      }
+      navigator.mediaDevices.enumerateDevices().then(devices => {
+        const cams = devices.filter(d => d.kind === 'videoinput');
+        if (cams.length === 0) {
+          this.qrScanError = 'Камера не обнаружена. Подключите камеру и перезапустите сканер.';
+          this.qrScannerState = 'error';
+          return;
+        }
+        this._startQrScan(cams);
+      }).catch(() => {
+        this._startQrScan([]);
+      });
+    },
+
+    _startQrScan(cameras) {
+      const config = { fps: 20, qrbox: { width: 320, height: 320 } };
+      this.qrScannerInstance = new Html5Qrcode('qr-reader');
+
+      const tryStart = (camera) => {
+        const maybeStr = typeof camera === 'string';
+        const label = maybeStr ? camera.substring(0, 20) + '…' : (camera.facingMode || 'default');
+        console.log('[QR] Camera:', maybeStr ? 'deviceId' : 'facingMode', label);
+        return this.qrScannerInstance.start(camera, config, (text) => this.onQrScanSuccess(text), () => {});
+      };
+
+      let promise;
+      if (cameras.length > 0) {
+        promise = tryStart(cameras[0].deviceId).catch(() => tryStart({ facingMode: 'environment' }));
+      } else {
+        promise = tryStart({ facingMode: 'environment' });
+      }
+      promise.then(() => {
+        const video = document.querySelector('#qr-reader video');
+        if (video) {
+          if (video.readyState >= 2) {
+            this.qrVideoReady = true;
+          } else {
+            video.addEventListener('playing', () => { this.qrVideoReady = true; }, { once: true });
+          }
+        }
+      });
+      promise.catch((err) => {
+        const msg = (err && (err.message || String(err))) || '';
+        if (msg.includes('NotAllowedError') || msg.includes('Permission') || msg.includes('denied')) {
+          this.qrScanError = 'Доступ к камере запрещён. Разрешите доступ в настройках браузера.';
+        } else if (msg.includes('NotFoundError') || msg.includes('No device') || msg.includes('not found')) {
+          this.qrScanError = 'Камера не найдена. Подключите камеру к компьютеру.';
+        } else if (msg.includes('NotReadableError') || msg.includes('in use')) {
+          this.qrScanError = 'Камера занята другим приложением. Закройте другие программы.';
+        } else if (msg.includes('not supported') || msg.includes('NotSupported')) {
+          this.qrScanError = 'Камера недоступна в этом браузере. '
+            + 'Используйте Chrome/Edge/Firefox. '
+            + 'Страница должна быть открыта через HTTPS, localhost или 127.0.0.1.';
+        } else {
+          this.qrScanError = 'Ошибка камеры: ' + msg.substring(0, 100);
+        }
+        this.qrScannerState = 'error';
+      });
+    },
+
+    onQrScanSuccess(decodedText) {
+      if (this.qrScannerState !== 'scanning') return;
+      console.log('[QR] Raw scan result:', decodedText.substring(0, 80));
+      if (this.qrScannerInstance) {
+        this.qrScannerInstance.stop().catch(() => {});
+      }
+      const code = this.parseMvideoUrl(decodedText);
+      if (!code) {
+        this.qrScanError = 'Не удалось распознать код товара из ссылки: ' + decodedText.substring(0, 60);
+        this.qrScannerState = 'error';
+        return;
+      }
+      const product = dataLayer.productByArticle.get(code);
+      if (!product) {
+        this.qrScanError = 'Товар с кодом «' + code + '» не найден в базе';
+        this.qrScannerState = 'error';
+        return;
+      }
+      this.showToast('Найден: ' + product.name);
+      this.closeQrScanner();
+      this.selectProduct(product);
+    },
+
+    parseMvideoUrl(url) {
+      const match = url.match(/\/products\/(\d+)/);
+      return match ? match[1] : null;
+    },
+
+    restartQrScanner() {
+      this.qrScannerState = 'scanning';
+      this.qrScanResult = null;
+      this.qrScanError = null;
+      this.qrVideoReady = false;
+      this.$nextTick(() => {
+        this.initQrScanner();
+      });
+    },
+
+    closeQrScanner() {
+      if (this.qrScannerInstance) {
+        try {
+          this.qrScannerInstance.stop().catch(() => {});
+        } catch (e) { /* ignore */ }
+        this.qrScannerInstance = null;
+      }
+      this.qrScannerOpen = false;
+      this.qrScannerState = 'idle';
+      this.qrScanResult = null;
+      this.qrScanError = null;
+      this.qrVideoReady = false;
+    },
+
   },
 
   async mounted() {
@@ -1092,7 +1238,9 @@ const app = Vue.createApp({
     // Close modals on Escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-          if (this.productUploadOpen) {
+          if (this.qrScannerOpen) {
+            this.closeQrScanner();
+          } else if (this.productUploadOpen) {
             this.closeProductUpload();
           } else if (this.barcodeModalOpen) {
             this.closeBarcodeModal();

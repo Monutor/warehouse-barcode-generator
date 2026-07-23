@@ -423,6 +423,32 @@ button {
   background: rgba(155, 89, 182, 0.18);
 }
 
+.shelf-card.qr {
+  border-color: #009688;
+  background: rgba(0, 150, 136, 0.08);
+}
+
+.shelf-card.qr .name {
+  color: #009688;
+}
+
+.shelf-card.qr:hover {
+  background: rgba(0, 150, 136, 0.15);
+}
+
+[data-theme="dark"] .shelf-card.qr {
+  border-color: #26a69a;
+  background: rgba(38, 166, 154, 0.1);
+}
+
+[data-theme="dark"] .shelf-card.qr .name {
+  color: #80cbc4;
+}
+
+[data-theme="dark"] .shelf-card.qr:hover {
+  background: rgba(38, 166, 154, 0.18);
+}
+
 /* ===== Product info in search result ===== */
 .product-info {
   display: flex;
@@ -460,6 +486,16 @@ button {
 @media screen and (max-width: 576px) {
   .shelf-grid--three-col {
     grid-template-columns: 1fr;
+  }
+}
+
+.shelf-grid--four-col {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media screen and (max-width: 576px) {
+  .shelf-grid--four-col {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -1094,6 +1130,95 @@ button {
 .barcode-inline {
   max-width: 300px;
   margin: 0 auto;
+}
+
+/* ===== QR Scanner modal ===== */
+.qr-scanner-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.qr-scanner-container {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.qr-scanner-container video {
+  width: 100%;
+  display: block;
+}
+
+.qr-scanner-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  height: 280px;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.45);
+}
+
+.qr-scanner-frame::before,
+.qr-scanner-frame::after {
+  content: '';
+  position: absolute;
+  border: 3px solid var(--primary, #f5a623);
+}
+
+.qr-scanner-frame::before {
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 4px 0 0 0;
+}
+
+.qr-scanner-frame::after {
+  top: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  border-left: none;
+  border-bottom: none;
+  border-radius: 0 4px 0 0;
+}
+
+.qr-scanner-frame .corner-bl,
+.qr-scanner-frame .corner-br {
+  position: absolute;
+  bottom: 0;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--primary, #f5a623);
+  border-radius: 0 0 4px 0;
+}
+
+.qr-scanner-frame .corner-bl {
+  left: 0;
+  border-right: none;
+  border-top: none;
+  border-radius: 0 0 0 4px;
+}
+
+.qr-scanner-frame .corner-br {
+  right: 0;
+  border-left: none;
+  border-top: none;
+  border-radius: 0 0 4px 0;
+}
+
+.qr-scanner-hint {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 16px 0 8px;
 }
 
 /* ===== Print styles ===== */

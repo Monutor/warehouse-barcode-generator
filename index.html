@@ -108,7 +108,7 @@
       <!-- Main content (no search or no results) -->
       <template v-if="searchQuery.trim().length < 2 || searchResults.length === 0">
         <!-- Quick actions: Favorites + Print + Products -->
-        <div class="shelf-grid shelf-grid--three-col mb-3">
+        <div class="shelf-grid shelf-grid--four-col mb-3">
           <button class="shelf-card fav" @click="selectFavorite">
             <span class="name">⭐ Избранное</span>
             <span class="icons"><span>{{ favoriteCount }}</span></span>
@@ -119,6 +119,10 @@
           </button>
           <button class="shelf-card product" @click="openProductSearch">
             <span class="name"><img src="icons/barcode-icon.svg" class="icon-img" alt=""> Штрих-код товара</span>
+            <span class="icons"></span>
+          </button>
+          <button class="shelf-card qr" @click="openQrScanner">
+            <span class="name">📷 QR товара</span>
             <span class="icons"></span>
           </button>
         </div>
@@ -363,6 +367,38 @@
       </div>
     </div>
 
+    <!-- QR Scanner modal -->
+    <div v-if="qrScannerOpen" class="modal d-block modal-overlay" tabindex="-1" @click.self="closeQrScanner">
+      <div class="barcode-modal-dialog">
+        <div class="barcode-modal-header">
+          <span class="barcode-modal-title">📷 QR-сканер товара</span>
+          <button type="button" class="barcode-modal-close" @click="closeQrScanner">×</button>
+        </div>
+        <div class="barcode-modal-body text-center">
+
+          <template v-if="qrScannerState === 'scanning'">
+            <div class="qr-scanner-wrapper">
+              <div id="qr-reader" class="qr-scanner-container"></div>
+              <div class="qr-scanner-frame" v-show="qrVideoReady">
+                <i class="corner-bl"></i>
+                <i class="corner-br"></i>
+              </div>
+            </div>
+            <p class="qr-scanner-hint">Наведите камеру на QR-код ценника M.Video</p>
+            <button class="btn btn-outline-danger" @click="closeQrScanner">✕ Отмена</button>
+          </template>
+
+          <template v-else-if="qrScannerState === 'error'">
+            <div class="py-3">
+              <p class="text-danger">{{ qrScanError }}</p>
+              <button class="btn btn-primary mt-2" @click="restartQrScanner">📷 Попробовать снова</button>
+            </div>
+          </template>
+
+        </div>
+      </div>
+    </div>
+
     <!-- Barcode modal -->
     <div v-if="barcodeModalOpen" class="modal d-block modal-overlay" tabindex="-1" @click.self="closeBarcodeModal">
       <div class="barcode-modal-dialog" :class="{'barcode-modal-dialog--split': productPanelOpen}">
@@ -433,6 +469,7 @@
           </div>
           <button type="button" class="btn btn-outline-primary barcode-btn-download" @click="downloadBarcode">⬇ Скачать</button>
           <button type="button" class="btn btn-primary barcode-btn-print" @click="printOne(currentBarcodeShelf)">🖨 Печать</button>
+          <button type="button" class="btn btn-outline-secondary" @click="rescanQr" v-if="barcodeMode === 'product'">📷 Ещё QR</button>
         </div>
       </div>
     </div>
@@ -449,6 +486,7 @@
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js" integrity="sha384-Kk5SjBOKprEnGfyBWfD2zROFd1Cu8kwOXxG2GIhYPcoDL2rBJS9P8Ud1ZMy4412a" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
   <script src="js/app.js"></script>
 </body>

@@ -335,6 +335,26 @@ class DataLayer {
   }
 }
 
+function findProduct(query) {
+  if (typeof query !== 'string') return null;
+  const p = dataLayer?.productByArticle?.get(query);
+  if (p) return p;
+  const products = dataLayer?.products || [];
+  for (const prod of products) {
+    if (prod.barcode && prod.barcode.trim() === query) return prod;
+  }
+  if (query.length >= 4 && /^\d+$/.test(query)) {
+    for (const prod of products) {
+      if (prod.barcode && prod.barcode.trim().endsWith(query)) return prod;
+    }
+  }
+  const lower = query.toLowerCase();
+  for (const prod of products) {
+    if (prod.name && prod.name.toLowerCase().includes(lower)) return prod;
+  }
+  return null;
+}
+
 // === Vue App ===
 const dataLayer = new DataLayer();
 const barcodeCache = new BarcodeCache();
@@ -487,13 +507,13 @@ const app = Vue.createApp({
     foundProducts() {
       const q = this.productSearchArticle.trim();
       if (!q) return [];
-      const articles = q.split(',').map(s => s.trim()).filter(Boolean);
+      const queries = q.split(',').map(s => s.trim()).filter(Boolean);
       const results = [];
       const seen = new Set();
-      for (const article of articles) {
-        if (seen.has(article)) continue;
-        seen.add(article);
-        const product = dataLayer.productByArticle.get(article);
+      for (const query of queries) {
+        if (seen.has(query)) continue;
+        seen.add(query);
+        const product = findProduct(query);
         if (product) results.push(product);
       }
       return results;
@@ -502,8 +522,8 @@ const app = Vue.createApp({
     notFoundArticles() {
       const q = this.productSearchArticle.trim();
       if (!q) return [];
-      const articles = q.split(',').map(s => s.trim()).filter(Boolean);
-      return articles.filter(a => !dataLayer.productByArticle.has(a));
+      const queries = q.split(',').map(s => s.trim()).filter(Boolean);
+      return queries.filter(a => !findProduct(a));
     },
 
     formattedDataDate() {
@@ -1169,21 +1189,24 @@ const app = Vue.createApp({
       if (this.qrScannerInstance) {
         this.qrScannerInstance.stop().catch(() => {});
       }
-      const code = this.parseMvideoUrl(decodedText);
-      if (!code) {
-        this.qrScanError = 'Не удалось распознать код товара из ссылки: ' + decodedText.substring(0, 60);
-        this.qrScannerState = 'error';
-        return;
-      }
-      const product = dataLayer.productByArticle.get(code);
+      const product = this.findProductByQrText(decodedText);
       if (!product) {
-        this.qrScanError = 'Товар с кодом «' + code + '» не найден в базе';
+        this.qrScanError = 'Товар не найден по QR-коду: ' + decodedText.substring(0, 60);
         this.qrScannerState = 'error';
         return;
       }
       this.showToast('Найден: ' + product.name);
       this.closeQrScanner();
       this.selectProduct(product);
+    },
+
+    findProductByQrText(text) {
+      const code = this.parseMvideoUrl(text);
+      if (code) {
+        const p = dataLayer.productByArticle.get(code);
+        if (p) return p;
+      }
+      return findProduct(text);
     },
 
     parseMvideoUrl(url) {

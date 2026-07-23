@@ -82,7 +82,14 @@
         </ol>
         <div class="instruction-subtitle">Штрих-код товара</div>
         <ol class="instruction-list" start="4">
-          <li><span class="step-num">4</span> Нажмите «Штрих-код товара» → введите артикул → нажмите на карточку</li>
+          <li><span class="step-num">4</span> Нажмите «Штрих-код товара» → введите артикул, ШК или название → нажмите на карточку</li>
+        </ol>
+        <div class="instruction-subtitle">QR-сканер</div>
+        <ol class="instruction-list" start="5">
+          <li><span class="step-num">5</span> Нажмите «📷 QR» — разрешите доступ к камере</li>
+          <li><span class="step-num">6</span> Наведите камеру на QR-код ценника М.Видео в рамку</li>
+          <li><span class="step-num">7</span> Штрих-код товара откроется автоматически</li>
+          <li><span class="step-num">8</span> Нажмите «📷 Ещё QR» внизу, чтобы отсканировать следующий</li>
         </ol>
       </div>
 
@@ -134,7 +141,7 @@
             <button class="back-btn" @click="closeProductSearch">← Назад</button>
           </div>
           <div class="mb-3">
-            <input type="text" class="form-control form-control-lg" v-model="productSearchArticle" placeholder="Введите артикул(ы) через запятую..." aria-label="Поиск товара по артикулу">
+            <input type="text" class="form-control form-control-lg" v-model="productSearchArticle" placeholder="Артикул, ШК (полный или последние 4+ цифр) или название..." aria-label="Поиск товара по артикулу, ШК или названию">
           </div>
           <button class="btn btn-outline-primary w-100 py-2 mb-3" @click="openProductUpload">
             📥 Обновить базу ШК
@@ -153,7 +160,7 @@
           </template>
           <button v-if="foundProducts.length > 0" class="btn btn-primary w-100 py-2 mt-2" @click="printProductFound" :disabled="printProductLoading"><svg class="heading-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19,8H5V3H19V8M19,13A1,1 0 0,1 18,12A1,1 0 0,1 19,11A1,1 0 0,1 20,12A1,1 0 0,1 19,13M17,17V13H7V17H17M19,6H5C3.34,6 2,7.34 2,9V18H6V21H18V18H22V9C22,7.34 20.66,6 19,6Z"/></svg> Печать всех ({{ foundProducts.length }})</button>
           <div v-if="productSearchArticle.trim() && foundProducts.length === 0 && notFoundArticles.length > 0" class="text-center text-muted py-3">
-            Товар с артикулом «{{ notFoundArticles[0] }}» не найден
+            Товар «{{ notFoundArticles[0] }}» не найден
           </div>
           <div v-if="notFoundArticles.length > 0 && foundProducts.length > 0" class="text-center text-muted small mt-1">
             Не найдены: {{ notFoundArticles.join(', ') }}
@@ -433,7 +440,7 @@
             </div>
             <div class="barcode-right-panel">
               <div class="barcode-right-panel-title">Артикул товара</div>
-              <input type="text" class="form-control" v-model="productSearchArticle" placeholder="Введите артикул..." />
+              <input type="text" class="form-control" v-model="productSearchArticle" placeholder="Артикул, ШК или название..." />
               <template v-for="product in foundProducts" :key="product.article">
                 <div class="shelf-card" @click="selectProductInPanel(product)">
                   <div class="product-info">

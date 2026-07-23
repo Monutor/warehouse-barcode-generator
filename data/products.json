@@ -1,6 +1,6 @@
 {
-  "version": 1784534299516,
-  "updatedAt": "2026-07-20T07:58:19.516Z",
+  "version": 1784828335834,
+  "updatedAt": "2026-07-23T17:38:55.834Z",
   "products": [
     {
       "article": "400249707",
@@ -74196,6 +74196,296 @@
       "article": "400557026",
       "name": "(МП)Миксер Bufett SMP 285 R",
       "barcode": "425199640285964638"
+    },
+    {
+      "article": "400738567",
+      "name": "MW SAMSUNG MC32DB7746KCBW Gr",
+      "barcode": "2026022700054"
+    },
+    {
+      "article": "400559553",
+      "name": "MW Samsung MS23K3614AK/BW",
+      "barcode": "2025121600210"
+    },
+    {
+      "article": "400757449",
+      "name": "MW SAMSUNG MS32DG4504AGBW",
+      "barcode": "8806097638872"
+    },
+    {
+      "article": "400472807",
+      "name": "(А)JM RED sol. J950",
+      "barcode": "5061061573365"
+    },
+    {
+      "article": "400849273",
+      "name": "(А)MC HI MS110",
+      "barcode": "4660463600207"
+    },
+    {
+      "article": "400473108",
+      "name": "(А)MC Hi MS90",
+      "barcode": "4660463600122"
+    },
+    {
+      "article": "401661803",
+      "name": "(А)TV Hisense 55UR8S",
+      "barcode": "6942351436500"
+    },
+    {
+      "article": "401662191",
+      "name": "(А)TV Hisense 65UR8S",
+      "barcode": "6942351436630"
+    },
+    {
+      "article": "401662276",
+      "name": "(А)TV Hisense 75UR8S",
+      "barcode": "6942351436760"
+    },
+    {
+      "article": "401662346",
+      "name": "(А)TV Hisense 85UR8S",
+      "barcode": "6942351436883"
+    },
+    {
+      "article": "401946428",
+      "name": "(А)VC Dreame VRV63F",
+      "barcode": "2040194642813"
+    },
+    {
+      "article": "401784413",
+      "name": "(А)VC RED sol. X20",
+      "barcode": "5061061574799"
+    },
+    {
+      "article": "400959227",
+      "name": "(А)В/Э/пан. VARD VHC6421B",
+      "barcode": "4607097710957"
+    },
+    {
+      "article": "400467233",
+      "name": "(А)М/стайлер RED sol. MS002",
+      "barcode": "5061061570258"
+    },
+    {
+      "article": "400514087",
+      "name": "(А)Парооч-ль RED sol. SM600",
+      "barcode": "5061061572818"
+    },
+    {
+      "article": "30083274",
+      "name": "(В)PDA Tecno CAMON 30 8/256GB Wh",
+      "barcode": "2003008327412"
+    },
+    {
+      "article": "400487543",
+      "name": "ГП Darina GM 3M41 002 WS",
+      "barcode": "4607152049961"
+    },
+    {
+      "article": "50177504",
+      "name": "(И)Клав. Red Square Alumix TKL C Kitsu W",
+      "barcode": "2005017750410"
+    },
+    {
+      "article": "401166425",
+      "name": "(И)Мышь IO by Red Square io1001",
+      "barcode": "4657843431056"
+    },
+    {
+      "article": "401166426",
+      "name": "(И)Мышь IO by Red Square io1002",
+      "barcode": "4657843431070"
+    },
+    {
+      "article": "401166417",
+      "name": "(И)Мышь IO by Red Square io161",
+      "barcode": "4657777638149"
+    },
+    {
+      "article": "401166418",
+      "name": "(И)Мышь IO by Red Square io162",
+      "barcode": "4657777638163"
+    },
+    {
+      "article": "401166421",
+      "name": "(И)Мышь IO by Red Square io181",
+      "barcode": "4657843430134"
+    },
+    {
+      "article": "401166422",
+      "name": "(И)Мышь IO by Red Square io182",
+      "barcode": "4657843430158"
+    },
+    {
+      "article": "401166419",
+      "name": "(И)Мышь IO by Red Square io191",
+      "barcode": "4657843431018"
+    },
+    {
+      "article": "401166420",
+      "name": "(И)Мышь IO by Red Square io192",
+      "barcode": "4657843431032"
+    },
+    {
+      "article": "401166430",
+      "name": "(И)Мышь IO by Red Square RSQ-10023",
+      "barcode": "4657777638248"
+    },
+    {
+      "article": "401166431",
+      "name": "(И)Мышь IO by Red Square RSQ-10024",
+      "barcode": "4657777638262"
+    },
+    {
+      "article": "401164322",
+      "name": "(И)Науш. Red Square RS321 Bl",
+      "barcode": "4657777638101"
+    },
+    {
+      "article": "401164321",
+      "name": "(И)Науш. Red Square RS322 Bl",
+      "barcode": "4657777639825"
+    },
+    {
+      "article": "401164316",
+      "name": "(И)Науш. Red Square RS322 Wh",
+      "barcode": "4657777639801"
+    },
+    {
+      "article": "20084556",
+      "name": "Кофе Belmio D.G. Latte Macchiato",
+      "barcode": "5415150800144"
+    },
+    {
+      "article": "400469578",
+      "name": "Мини-печь Hotpoint MFH 456 BL",
+      "barcode": "8690842731563"
+    },
+    {
+      "article": "400530968",
+      "name": "(МП)PDA Samsung S25 Ultra 512GB Ti Gray",
+      "barcode": "204005309681868616"
+    },
+    {
+      "article": "401535373",
+      "name": "(МП)PDA Xiaomi M7 Pro 5G 12/512GB Green",
+      "barcode": "693255446159162541"
+    },
+    {
+      "article": "401060358",
+      "name": "(МП)VC OULEMEI OLM-XCY010 Wh",
+      "barcode": "204938011510072059"
+    },
+    {
+      "article": "400600193",
+      "name": "(МП)WM-крепление Samsung SKK-ATV/SA",
+      "barcode": "880609208131422241"
+    },
+    {
+      "article": "400506943",
+      "name": "(МП)А/гриль EcoChef airfrier 004-silver",
+      "barcode": "204371216038768334"
+    },
+    {
+      "article": "400532921",
+      "name": "(МП)В/Г/пан. Bufett HGH 765SI Gr",
+      "barcode": "425199640765664638"
+    },
+    {
+      "article": "4138950",
+      "name": "(МП)В/Г/пан. Krona Alma 60 BL",
+      "barcode": "4260286893192"
+    },
+    {
+      "article": "400510878",
+      "name": "(МП)В/Г/пан. Simfer H60Q40B025",
+      "barcode": "868377014079836713"
+    },
+    {
+      "article": "400405342",
+      "name": "(МП)В/Э/шкаф Beraum OE-60B58M6S1W",
+      "barcode": "286205970220959235"
+    },
+    {
+      "article": "400238605",
+      "name": "(МП)В/Э/шкаф Zig & Sh e153b",
+      "barcode": "204002386051758947"
+    },
+    {
+      "article": "400427400",
+      "name": "(МП)Картридж TWIST 800",
+      "barcode": "460705002821165226"
+    },
+    {
+      "article": "400557025",
+      "name": "(МП)Миксер Bufett SMP 284 Lt/B",
+      "barcode": "425199640284264638"
+    },
+    {
+      "article": "400557027",
+      "name": "(МП)Миксер Bufett SMP 286 B",
+      "barcode": "425199640286664638"
+    },
+    {
+      "article": "400581182",
+      "name": "(МП)Мон. MSI 9S6-3PD7CT-014",
+      "barcode": "471137725905768292"
+    },
+    {
+      "article": "400112349",
+      "name": "(МП)Науш. Sony WI-XB400 Bl",
+      "barcode": "203762738706955393"
+    },
+    {
+      "article": "401305819",
+      "name": "(МП)Сверло TurboSky TS-16 Me",
+      "barcode": "467023114797161063"
+    },
+    {
+      "article": "401567548",
+      "name": "(МП)Соединительный элемент WM, DW ZUGEL",
+      "barcode": "461021658162822241"
+    },
+    {
+      "article": "400551273",
+      "name": "(МП)Стол Ami Ultimate черный",
+      "barcode": "204005512731268458"
+    },
+    {
+      "article": "400527780",
+      "name": "(МП)Т/вент. BRASSON BTH-26GR",
+      "barcode": "4606224486482"
+    },
+    {
+      "article": "400643453",
+      "name": "(МП)Чемодан Ami Flight L Be бежевый",
+      "barcode": "204006434531868458"
+    },
+    {
+      "article": "400535878",
+      "name": "(МП)ЭЧ Bufett LKT 294S",
+      "barcode": "425199640294164638"
+    },
+    {
+      "article": "10035377",
+      "name": "(У)TV Sber SDX-32FQ6031",
+      "barcode": "2001003537713"
+    },
+    {
+      "article": "20106489",
+      "name": "(У)В/И/пан. Grundig GIEI623410MX",
+      "barcode": "2002010648911"
+    },
+    {
+      "article": "401776468",
+      "name": "(У)Кресло Thunderobot E101 VP Edition",
+      "barcode": "2040177646814"
+    },
+    {
+      "article": "50180926",
+      "name": "(У)Сковорода Tefal COOK&CLEAN 04233128",
+      "barcode": "2005018092618"
     }
   ]
 }

@@ -411,9 +411,7 @@ const app = Vue.createApp({
       qrScanResult: null,
       qrScanError: null,
       qrVideoReady: false,
-      availableCameras: [],
-      selectedCameraId: null,
-      _switchingToCam0: false,
+
     };
   },
 
@@ -1112,10 +1110,6 @@ const app = Vue.createApp({
       this.qrVideoReady = false;
       console.log('[QR] Opening scanner');
 
-      this.availableCameras = [];
-      this.selectedCameraId = null;
-      this._switchingToCam0 = false;
-
       this.$nextTick(() => {
         this.initQrScanner();
       });
@@ -1138,15 +1132,8 @@ const app = Vue.createApp({
     _startQrScan() {
       const config = { fps: 20, qrbox: { width: 320, height: 320 } };
       this.qrScannerInstance = new Html5Qrcode('qr-reader');
-
-      const savedId = localStorage.getItem('selectedCameraId');
-      if (savedId) {
-        this.selectedCameraId = savedId;
-      }
-
-      const cameraConfig = savedId || { facingMode: { exact: 'environment' } };
-      console.log('[QR] Starting camera:', savedId ? 'deviceId' : 'facingMode exact environment');
-      this._doStartQrScan(cameraConfig, config);
+      console.log('[QR] Starting camera with facingMode environment');
+      this._doStartQrScan({ facingMode: { exact: 'environment' } }, config);
     },
 
     _doStartQrScan(cameraConfig, config) {
@@ -1164,56 +1151,14 @@ const app = Vue.createApp({
             video.addEventListener('playing', () => { this.qrVideoReady = true; }, { once: true });
           }
         }
-        navigator.mediaDevices.enumerateDevices().then(devices => {
-          let allCams = devices.filter(d => d.kind === 'videoinput');
-          let activeDeviceId = null;
-          if (video && video.srcObject) {
-            try {
-              const track = video.srcObject.getVideoTracks()[0];
-              if (track) activeDeviceId = track.getSettings().deviceId;
-            } catch (e) {}
-          }
-          // Filter front, keep only first back camera (camera 0)
-          let cams = allCams.filter(c => !this._isFrontCamera(c));
-          const firstBack = cams.length > 0 ? cams[0].deviceId : null;
-          // Try to use first back camera; if facingMode started different, restart
-          if (activeDeviceId && firstBack && activeDeviceId !== firstBack && !this._switchingToCam0) {
-            this._switchingToCam0 = true;
-            this.selectedCameraId = firstBack;
-            localStorage.setItem('selectedCameraId', firstBack);
-            this.availableCameras = [cams[0]];
-            this.restartQrScanner();
-            return;
-          }
-          // Camera 0 is running or wasn't found
-          if (firstBack) {
-            this.selectedCameraId = firstBack;
-            localStorage.setItem('selectedCameraId', firstBack);
-            this.availableCameras = [cams[0]];
-          } else {
-            this.availableCameras = allCams;
-            if (allCams.length > 0) this.selectedCameraId = allCams[0].deviceId;
-          }
-        }).catch(() => {});
       }).catch((err) => {
-        if (typeof cameraConfig === 'string') {
-          console.log('[QR] DeviceId failed, retrying with facingMode');
-          this._doStartQrScan({ facingMode: { exact: 'environment' } }, config);
-          return;
-        }
-        if (cameraConfig.facingMode && typeof cameraConfig.facingMode === 'object') {
+        if (cameraConfig.facingMode && typeof cameraConfig.facingMode === 'object' && cameraConfig.facingMode.exact) {
           console.log('[QR] Exact environment failed, retrying with soft facingMode');
           this._doStartQrScan({ facingMode: 'environment' }, config);
           return;
         }
         this._handleQrError(err);
       });
-    },
-
-    _isFrontCamera(cam) {
-      if (!cam.label) return false;
-      const label = cam.label.toLowerCase();
-      return /front|face(invariant\s*\(.*?\))?|user facing|внешняя|фронтальная|передняя/i.test(label);
     },
 
     _handleQrError(err) {
@@ -1233,13 +1178,6 @@ const app = Vue.createApp({
         this.qrScanError = 'Ошибка камеры: ' + msg.substring(0, 100);
       }
       this.qrScannerState = 'error';
-    },
-
-    switchCamera(deviceId) {
-      if (deviceId === this.selectedCameraId) return;
-      this.selectedCameraId = deviceId;
-      localStorage.setItem('selectedCameraId', deviceId);
-      this.restartQrScanner();
     },
 
     async onQrScanSuccess(decodedText) {

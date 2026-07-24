@@ -1221,41 +1221,6 @@ button {
   margin: 16px 0 8px;
 }
 
-.camera-selector {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin: 12px 0 4px;
-}
-
-.camera-btn {
-  padding: 4px 14px;
-  font-size: 0.8rem;
-  border: 1px solid var(--border, #444);
-  background: var(--card-bg, #1e1e1e);
-  color: var(--text-muted, #aaa);
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.camera-btn:hover {
-  border-color: var(--primary, #f5a623);
-  color: var(--primary, #f5a623);
-}
-
-.camera-btn.active {
-  background: var(--primary, #f5a623);
-  color: #000;
-  border-color: var(--primary, #f5a623);
-  font-weight: 600;
-}
-
 /* ===== Print styles ===== */
 .print-area {
   display: none;

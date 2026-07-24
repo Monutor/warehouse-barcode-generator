@@ -391,14 +391,6 @@
                 <i class="corner-br"></i>
               </div>
             </div>
-            <div class="camera-selector" v-if="availableCameras.length > 1">
-              <button
-                v-for="cam in availableCameras"
-                :key="cam.deviceId"
-                :class="['camera-btn', { active: cam.deviceId === selectedCameraId }]"
-                @click="switchCamera(cam.deviceId)"
-              >{{ cam.label ? cam.label.replace(/\s*\(.*?\)\s*/g, ' ').trim() : 'Камера ' + (availableCameras.indexOf(cam) + 1) }}</button>
-            </div>
             <p class="qr-scanner-hint">Наведите камеру на QR-код ценника M.Video</p>
             <button class="btn btn-outline-danger" @click="closeQrScanner">✕ Отмена</button>
           </template>

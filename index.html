@@ -383,7 +383,25 @@
         </div>
         <div class="barcode-modal-body text-center">
 
-          <template v-if="qrScannerState === 'scanning'">
+          <template v-if="qrScannerState === 'camera-select'">
+            <div class="py-3">
+              <p class="mb-3">Выберите камеру для сканирования:</p>
+              <div v-if="qrAvailableCameras.length === 0" class="text-muted">Поиск камер...</div>
+              <div v-else class="d-flex flex-column gap-2">
+                <button
+                  v-for="cam in qrAvailableCameras"
+                  :key="cam.deviceId"
+                  class="btn btn-outline-primary"
+                  @click="selectQrCamera(cam.deviceId)"
+                >
+                  {{ cam.label || 'Камера' }}
+                </button>
+              </div>
+              <button class="btn btn-outline-danger mt-3" @click="closeQrScanner">✕ Отмена</button>
+            </div>
+          </template>
+
+          <template v-else-if="qrScannerState === 'scanning'">
             <div class="qr-scanner-wrapper">
               <div id="qr-reader" class="qr-scanner-container"></div>
               <div class="qr-scanner-frame" v-show="qrVideoReady">

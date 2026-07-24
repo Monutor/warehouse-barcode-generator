@@ -409,10 +409,12 @@ const app = Vue.createApp({
       qrScannerOpen: false,
       _forceCam0DeviceId: null,
       _cam0Retried: false,
-      qrScannerState: 'idle', // idle | scanning | result | error
+      qrScannerState: 'idle', // idle | camera-select | scanning | result | error
       qrScanResult: null,
       qrScanError: null,
       qrVideoReady: false,
+      qrAvailableCameras: [],
+      qrSelectedCameraId: null,
 
     };
   },
@@ -1107,13 +1109,40 @@ const app = Vue.createApp({
     openQrScanner() {
       vibrate();
       this.qrScannerOpen = true;
-      this.qrScannerState = 'scanning';
+      this.qrScannerState = 'camera-select';
       this.qrScanError = null;
       this.qrVideoReady = false;
       this._forceCam0DeviceId = null;
       this._cam0Retried = false;
-      console.log('[QR] Opening scanner');
+      this.qrSelectedCameraId = null;
+      this.qrAvailableCameras = [];
+      console.log('[QR] Opening scanner, enumerating cameras');
 
+      this.$nextTick(async () => {
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const cams = devices.filter(d => d.kind === 'videoinput' && !this._isFrontCamera(d));
+          this.qrAvailableCameras = cams;
+          console.log('[QR] Available back cameras:', cams.map(c => ({ label: c.label, deviceId: c.deviceId })));
+          if (cams.length === 0) {
+            this.qrScannerState = 'scanning';
+            this.qrVideoReady = false;
+            this.$nextTick(() => { this.initQrScanner(); });
+          }
+        } catch (e) {
+          console.log('[QR] Enumerate error:', e);
+          this.qrScannerState = 'scanning';
+          this.qrVideoReady = false;
+          this.$nextTick(() => { this.initQrScanner(); });
+        }
+      });
+    },
+
+    selectQrCamera(deviceId) {
+      this.qrSelectedCameraId = deviceId;
+      this._forceCam0DeviceId = deviceId;
+      this.qrScannerState = 'scanning';
+      this.qrVideoReady = false;
       this.$nextTick(() => {
         this.initQrScanner();
       });
@@ -1162,7 +1191,7 @@ const app = Vue.createApp({
             const activeId = track.getSettings().deviceId;
             console.log('[QR] Active camera:', activeId);
             const devices = await navigator.mediaDevices.enumerateDevices();
-            const cams = devices.filter(d => d.kind === 'videoinput' && !this._isFrontCamera(d) && !this._isWideAngleCamera(d));
+            const cams = devices.filter(d => d.kind === 'videoinput' && !this._isFrontCamera(d));
             console.log('[QR] Back cameras:', cams.map(c => ({ label: c.label, deviceId: c.deviceId })));
             const firstBack = cams.length > 0 ? cams[0].deviceId : null;
             if (firstBack && activeId !== firstBack) {
@@ -1199,12 +1228,6 @@ const app = Vue.createApp({
       if (!cam.label) return false;
       const label = cam.label.toLowerCase();
       return /front|face(invariant\s*\(.*?\))?|user facing|внешняя|фронтальная|передняя/i.test(label);
-    },
-
-    _isWideAngleCamera(cam) {
-      if (!cam.label) return false;
-      const label = cam.label.toLowerCase();
-      return /wide|ultrawide|ultra\s*wide|macro|широкоугольная|сверхширокоугольная|сверхшир|макро/i.test(label);
     },
 
     _handleQrError(err) {

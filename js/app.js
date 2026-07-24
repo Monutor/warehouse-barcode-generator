@@ -1150,7 +1150,7 @@ const app = Vue.createApp({
 
       let promise;
       if (cameras.length > 0) {
-        promise = tryStart(cameras[0].deviceId).catch(() => tryStart({ facingMode: 'environment' }));
+        promise = tryStart({ facingMode: 'environment' }).catch(() => tryStart(cameras[0].deviceId));
       } else {
         promise = tryStart({ facingMode: 'environment' });
       }

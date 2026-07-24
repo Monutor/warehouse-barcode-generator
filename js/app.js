@@ -1162,7 +1162,7 @@ const app = Vue.createApp({
             const activeId = track.getSettings().deviceId;
             console.log('[QR] Active camera:', activeId);
             const devices = await navigator.mediaDevices.enumerateDevices();
-            const cams = devices.filter(d => d.kind === 'videoinput' && !this._isFrontCamera(d));
+            const cams = devices.filter(d => d.kind === 'videoinput' && !this._isFrontCamera(d) && !this._isWideAngleCamera(d));
             console.log('[QR] Back cameras:', cams.map(c => ({ label: c.label, deviceId: c.deviceId })));
             const firstBack = cams.length > 0 ? cams[0].deviceId : null;
             if (firstBack && activeId !== firstBack) {
@@ -1199,6 +1199,12 @@ const app = Vue.createApp({
       if (!cam.label) return false;
       const label = cam.label.toLowerCase();
       return /front|face(invariant\s*\(.*?\))?|user facing|внешняя|фронтальная|передняя/i.test(label);
+    },
+
+    _isWideAngleCamera(cam) {
+      if (!cam.label) return false;
+      const label = cam.label.toLowerCase();
+      return /wide|ultrawide|ultra\s*wide|macro|широкоугольная|сверхширокоугольная|сверхшир|макро/i.test(label);
     },
 
     _handleQrError(err) {

@@ -1161,11 +1161,21 @@ const app = Vue.createApp({
       this.qrShowCameraList = false;
       this.$nextTick(() => {
         this.qrScannerInstance = new Html5Qrcode('qr-reader');
-        this._doStartQrScan(deviceId, { fps: 20, qrbox: { width: 320, height: 320 } });
+        const config = {
+          fps: 20,
+          qrbox: (viewfinderWidth, viewfinderHeight) => {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const size = Math.min(320, Math.floor(minEdge * 0.8));
+            return { width: size, height: size };
+          },
+          aspectRatio: 1.0
+        };
+        this._doStartQrScan(deviceId, config);
       });
     },
 
     initQrScanner() {
+      console.log('[QR] initQrScanner called, Html5Qrcode exists:', typeof Html5Qrcode !== 'undefined');
       if (typeof Html5Qrcode === 'undefined') {
         this.qrScanError = 'Библиотека сканирования не загружена. Обновите страницу.';
         this.qrScannerState = 'error';
@@ -1180,7 +1190,16 @@ const app = Vue.createApp({
     },
 
     _startQrScan() {
-      const config = { fps: 20, qrbox: { width: 320, height: 320 } };
+      const config = {
+        fps: 20,
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          const size = Math.min(320, Math.floor(minEdge * 0.8));
+          console.log('[QR] qrbox computed:', { viewfinderWidth, viewfinderHeight, size });
+          return { width: size, height: size };
+        },
+        aspectRatio: 1.0
+      };
       this.qrScannerInstance = new Html5Qrcode('qr-reader');
       const camConfig = this._forceCam0DeviceId || { facingMode: { exact: 'environment' } };
       console.log('[QR] Starting camera:', this._forceCam0DeviceId ? 'deviceId' : 'facingMode');
@@ -1192,7 +1211,7 @@ const app = Vue.createApp({
         cameraConfig,
         config,
         (text) => this.onQrScanSuccess(text),
-        () => {}
+        (errorMessage) => { console.log('[QR] Scan tick error:', errorMessage); }
       ).then(async () => {
         const video = document.querySelector('#qr-reader video');
         if (video) {
@@ -1283,10 +1302,15 @@ const app = Vue.createApp({
     },
 
     async onQrScanSuccess(decodedText) {
-      if (this.qrScannerState !== 'scanning') return;
+      if (this.qrScannerState !== 'scanning') {
+        console.log('[QR] Scan result ignored, state:', this.qrScannerState);
+        return;
+      }
       console.log('[QR] Raw scan result:', decodedText.substring(0, 80));
+      vibrate();
       const product = this.findProductByQrText(decodedText);
       if (!product) {
+        console.log('[QR] Product not found for:', decodedText.substring(0, 80));
         this.qrScanError = 'Товар не найден по QR-коду: ' + decodedText.substring(0, 60);
         this.qrScannerState = 'error';
         return;

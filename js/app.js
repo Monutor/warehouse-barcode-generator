@@ -1103,7 +1103,7 @@ const app = Vue.createApp({
       }
     },
 
-    async openQrScanner() {
+    openQrScanner() {
       vibrate();
       this.qrScannerOpen = true;
       this.qrScannerState = 'scanning';
@@ -1111,23 +1111,8 @@ const app = Vue.createApp({
       this.qrVideoReady = false;
       console.log('[QR] Opening scanner');
 
-      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-        this.qrScanError = 'Ваш браузер не поддерживает доступ к камере. Попробуйте Chrome, Firefox или Edge.';
-        this.qrScannerState = 'error';
-        return;
-      }
-      const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
-      const cams = devices.filter(d => d.kind === 'videoinput');
-
-      if (cams.length > 0) {
-        this.availableCameras = cams;
-        const savedId = localStorage.getItem('selectedCameraId');
-        const cam = cams.find(c => c.deviceId === savedId) || cams[0];
-        this.selectedCameraId = cam.deviceId;
-      } else {
-        this.availableCameras = [];
-        this.selectedCameraId = null;
-      }
+      this.availableCameras = [];
+      this.selectedCameraId = null;
 
       this.$nextTick(() => {
         this.initQrScanner();
@@ -1151,11 +1136,11 @@ const app = Vue.createApp({
     _startQrScan() {
       const config = { fps: 20, qrbox: { width: 320, height: 320 } };
       this.qrScannerInstance = new Html5Qrcode('qr-reader');
-      const cameraConfig = this.selectedCameraId || { facingMode: 'environment' };
 
-      console.log('[QR] Starting camera:', this.selectedCameraId
-        ? this.selectedCameraId.substring(0, 20) + '…'
-        : 'facingMode: environment');
+      const savedId = localStorage.getItem('selectedCameraId');
+      const cameraConfig = savedId || { facingMode: 'environment' };
+
+      console.log('[QR] Starting camera:', savedId ? savedId.substring(0, 20) + '…' : 'facingMode: environment');
       this.qrScannerInstance.start(
         cameraConfig,
         config,
@@ -1175,6 +1160,7 @@ const app = Vue.createApp({
           this.availableCameras = cams;
           if (cams.length > 0 && !this.selectedCameraId) {
             this.selectedCameraId = cams[0].deviceId;
+            localStorage.setItem('selectedCameraId', cams[0].deviceId);
           }
         }).catch(() => {});
       }).catch((err) => {

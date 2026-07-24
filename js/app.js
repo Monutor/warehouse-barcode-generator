@@ -1114,18 +1114,19 @@ const app = Vue.createApp({
       this.qrScannerState = 'scanning';
       this.qrScanError = null;
       this.qrVideoReady = false;
-      this._forceCam0DeviceId = null;
+      this._forceCam0DeviceId = localStorage.getItem('qrLastCameraId') || null;
       this._cam0Retried = false;
-      this.qrSelectedCameraId = null;
+      this.qrSelectedCameraId = this._forceCam0DeviceId;
       this.qrAvailableCameras = [];
       this.qrShowCameraList = false;
-      console.log('[QR] Opening scanner, starting camera directly');
+      console.log('[QR] Opening scanner, starting camera directly', this._forceCam0DeviceId ? '(saved: ' + this._forceCam0DeviceId + ')' : '');
       this.$nextTick(() => { this.initQrScanner(); });
     },
 
     selectQrCamera(deviceId) {
       this.qrSelectedCameraId = deviceId;
       this._forceCam0DeviceId = deviceId;
+      localStorage.setItem('qrLastCameraId', deviceId);
       this.qrScannerState = 'scanning';
       this.qrVideoReady = false;
       this.qrShowCameraList = false;
@@ -1155,6 +1156,7 @@ const app = Vue.createApp({
       }
       this.qrSelectedCameraId = deviceId;
       this._forceCam0DeviceId = deviceId;
+      localStorage.setItem('qrLastCameraId', deviceId);
       this.qrVideoReady = false;
       this.qrShowCameraList = false;
       this.$nextTick(() => {

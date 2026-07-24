@@ -383,30 +383,28 @@
         </div>
         <div class="barcode-modal-body text-center">
 
-          <template v-if="qrScannerState === 'camera-select'">
-            <div class="py-3">
-              <p class="mb-3">Выберите камеру для сканирования:</p>
-              <div v-if="qrAvailableCameras.length === 0" class="text-muted">Поиск камер...</div>
-              <div v-else class="d-flex flex-column gap-2">
-                <button
-                  v-for="cam in qrAvailableCameras"
-                  :key="cam.deviceId"
-                  class="btn btn-outline-primary"
-                  @click="selectQrCamera(cam.deviceId)"
-                >
-                  {{ cam.label || 'Камера' }}
-                </button>
-              </div>
-              <button class="btn btn-outline-danger mt-3" @click="closeQrScanner">✕ Отмена</button>
-            </div>
-          </template>
-
-          <template v-else-if="qrScannerState === 'scanning'">
+          <template v-if="qrScannerState === 'scanning'">
             <div class="qr-scanner-wrapper">
               <div id="qr-reader" class="qr-scanner-container"></div>
               <div class="qr-scanner-frame" v-show="qrVideoReady">
                 <i class="corner-bl"></i>
                 <i class="corner-br"></i>
+              </div>
+              <div class="qr-camera-switcher" v-show="qrVideoReady">
+                <button class="qr-camera-btn" @click="toggleQrCameraList" title="Сменить камеру">
+                  📷
+                </button>
+                <div v-if="qrShowCameraList" class="qr-camera-dropdown">
+                  <button
+                    v-for="cam in qrAllCameras"
+                    :key="cam.deviceId"
+                    class="qr-camera-option"
+                    :class="{ active: cam.deviceId === qrSelectedCameraId || (!qrSelectedCameraId && cam.label.toLowerCase().includes('back')) }"
+                    @click="switchQrCamera(cam.deviceId)"
+                  >
+                    {{ cam.label || 'Камера' }}
+                  </button>
+                </div>
               </div>
             </div>
             <p class="qr-scanner-hint">Наведите камеру на QR-код ценника M.Video</p>

@@ -415,6 +415,8 @@ const app = Vue.createApp({
       qrVideoReady: false,
       qrAvailableCameras: [],
       qrSelectedCameraId: null,
+      qrShowCameraList: false,
+      qrAllCameras: [],
 
     };
   },
@@ -1109,33 +1111,16 @@ const app = Vue.createApp({
     openQrScanner() {
       vibrate();
       this.qrScannerOpen = true;
-      this.qrScannerState = 'camera-select';
+      this.qrScannerState = 'scanning';
       this.qrScanError = null;
       this.qrVideoReady = false;
       this._forceCam0DeviceId = null;
       this._cam0Retried = false;
       this.qrSelectedCameraId = null;
       this.qrAvailableCameras = [];
-      console.log('[QR] Opening scanner, enumerating cameras');
-
-      this.$nextTick(async () => {
-        try {
-          const devices = await navigator.mediaDevices.enumerateDevices();
-          const cams = devices.filter(d => d.kind === 'videoinput' && !this._isFrontCamera(d));
-          this.qrAvailableCameras = cams;
-          console.log('[QR] Available back cameras:', cams.map(c => ({ label: c.label, deviceId: c.deviceId })));
-          if (cams.length === 0) {
-            this.qrScannerState = 'scanning';
-            this.qrVideoReady = false;
-            this.$nextTick(() => { this.initQrScanner(); });
-          }
-        } catch (e) {
-          console.log('[QR] Enumerate error:', e);
-          this.qrScannerState = 'scanning';
-          this.qrVideoReady = false;
-          this.$nextTick(() => { this.initQrScanner(); });
-        }
-      });
+      this.qrShowCameraList = false;
+      console.log('[QR] Opening scanner, starting camera directly');
+      this.$nextTick(() => { this.initQrScanner(); });
     },
 
     selectQrCamera(deviceId) {
@@ -1143,8 +1128,38 @@ const app = Vue.createApp({
       this._forceCam0DeviceId = deviceId;
       this.qrScannerState = 'scanning';
       this.qrVideoReady = false;
+      this.qrShowCameraList = false;
       this.$nextTick(() => {
         this.initQrScanner();
+      });
+    },
+
+    toggleQrCameraList() {
+      if (this.qrShowCameraList) {
+        this.qrShowCameraList = false;
+        return;
+      }
+      navigator.mediaDevices.enumerateDevices().then((devices) => {
+        this.qrAllCameras = devices.filter(d => d.kind === 'videoinput');
+        this.qrShowCameraList = true;
+      }).catch(() => {
+        this.qrAllCameras = [];
+        this.qrShowCameraList = true;
+      });
+    },
+
+    switchQrCamera(deviceId) {
+      if (this.qrScannerInstance) {
+        this.qrScannerInstance.stop().catch(() => {});
+        this.qrScannerInstance = null;
+      }
+      this.qrSelectedCameraId = deviceId;
+      this._forceCam0DeviceId = deviceId;
+      this.qrVideoReady = false;
+      this.qrShowCameraList = false;
+      this.$nextTick(() => {
+        this.qrScannerInstance = new Html5Qrcode('qr-reader');
+        this._doStartQrScan(deviceId, { fps: 20, qrbox: { width: 320, height: 320 } });
       });
     },
 
@@ -1181,8 +1196,12 @@ const app = Vue.createApp({
         if (video) {
           if (video.readyState >= 2) {
             this.qrVideoReady = true;
+            this._populateAndShowCameraList();
           } else {
-            video.addEventListener('playing', () => { this.qrVideoReady = true; }, { once: true });
+            video.addEventListener('playing', () => {
+              this.qrVideoReady = true;
+              this._populateAndShowCameraList();
+            }, { once: true });
           }
         }
         try {
@@ -1228,6 +1247,18 @@ const app = Vue.createApp({
       if (!cam.label) return false;
       const label = cam.label.toLowerCase();
       return /front|face(invariant\s*\(.*?\))?|user facing|внешняя|фронтальная|передняя/i.test(label);
+    },
+
+    async _populateAndShowCameraList() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        this.qrAllCameras = devices.filter(d => d.kind === 'videoinput');
+        if (this.qrAllCameras.length > 1) {
+          this.qrShowCameraList = true;
+        }
+      } catch (e) {
+        console.log('[QR] Failed to enumerate cameras for list:', e);
+      }
     },
 
     _handleQrError(err) {

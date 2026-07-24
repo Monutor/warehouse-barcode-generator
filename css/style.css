@@ -1221,6 +1221,86 @@ button {
   margin: 16px 0 8px;
 }
 
+.qr-camera-switcher {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+}
+
+.qr-camera-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--primary, #f5a623);
+  background: var(--card-bg, #1e1e1e);
+  color: var(--primary, #f5a623);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.qr-camera-btn:hover {
+  opacity: 1;
+}
+
+.qr-camera-dropdown {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  min-width: 200px;
+  background: var(--card-bg, #1e1e1e);
+  border: 1px solid var(--border, #333);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  overflow: hidden;
+}
+
+.qr-camera-option {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text, #e0e0e0);
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qr-camera-option:hover {
+  background: var(--hover-bg, #333);
+}
+
+.qr-camera-option.active {
+  color: var(--primary, #f5a623);
+  font-weight: 600;
+}
+
+[data-theme="dark"] .qr-camera-btn {
+  background: #2a2a2a;
+}
+
+[data-theme="dark"] .qr-camera-dropdown {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+[data-theme="dark"] .qr-camera-option {
+  color: #ccc;
+}
+
+[data-theme="dark"] .qr-camera-option:hover {
+  background: #3a3a3a;
+}
+
 /* ===== Print styles ===== */
 .print-area {
   display: none;

@@ -1141,10 +1141,9 @@ const app = Vue.createApp({
       if (savedId) {
         this.selectedCameraId = savedId;
       }
-      const cameraConfig = savedId || { facingMode: { exact: 'environment' } };
 
-      console.log('[QR] Starting camera:', savedId ? savedId.substring(0, 20) + '…' : 'facingMode: exact environment');
-      this._doStartQrScan(cameraConfig, config);
+      console.log('[QR] Starting camera: facingMode exact environment');
+      this._doStartQrScan({ facingMode: { exact: 'environment' } }, config);
     },
 
     _doStartQrScan(cameraConfig, config) {
@@ -1163,9 +1162,29 @@ const app = Vue.createApp({
           }
         }
         navigator.mediaDevices.enumerateDevices().then(devices => {
-          const cams = devices.filter(d => d.kind === 'videoinput');
+          let cams = devices.filter(d => d.kind === 'videoinput');
+          let backDeviceId = null;
+          if (video && video.srcObject) {
+            try {
+              const track = video.srcObject.getVideoTracks()[0];
+              if (track) {
+                backDeviceId = track.getSettings().deviceId;
+              }
+            } catch (e) {}
+          }
+          if (backDeviceId) {
+            cams = cams.filter(c => c.deviceId === backDeviceId || !this._isFrontCamera(c));
+          } else {
+            cams = cams.filter(c => !this._isFrontCamera(c));
+          }
+          if (cams.length === 0) {
+            cams = devices.filter(d => d.kind === 'videoinput');
+          }
           this.availableCameras = cams;
-          if (cams.length > 0 && !this.selectedCameraId) {
+          if (backDeviceId && cams.some(c => c.deviceId === backDeviceId)) {
+            this.selectedCameraId = backDeviceId;
+            localStorage.setItem('selectedCameraId', backDeviceId);
+          } else if (cams.length > 0 && !this.selectedCameraId) {
             this.selectedCameraId = cams[0].deviceId;
           }
         }).catch(() => {});
@@ -1177,6 +1196,12 @@ const app = Vue.createApp({
         }
         this._handleQrError(err);
       });
+    },
+
+    _isFrontCamera(cam) {
+      if (!cam.label) return false;
+      const label = cam.label.toLowerCase();
+      return /front|face(invariant\s*\(.*?\))?|user facing|внешняя|фронтальная|передняя/i.test(label);
     },
 
     _handleQrError(err) {

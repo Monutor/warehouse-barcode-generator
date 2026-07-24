@@ -1142,8 +1142,9 @@ const app = Vue.createApp({
         this.selectedCameraId = savedId;
       }
 
-      console.log('[QR] Starting camera: facingMode exact environment');
-      this._doStartQrScan({ facingMode: { exact: 'environment' } }, config);
+      const cameraConfig = savedId || { facingMode: { exact: 'environment' } };
+      console.log('[QR] Starting camera:', savedId ? 'deviceId' : 'facingMode exact environment');
+      this._doStartQrScan(cameraConfig, config);
     },
 
     _doStartQrScan(cameraConfig, config) {
@@ -1189,6 +1190,11 @@ const app = Vue.createApp({
           }
         }).catch(() => {});
       }).catch((err) => {
+        if (typeof cameraConfig === 'string') {
+          console.log('[QR] DeviceId failed, retrying with facingMode');
+          this._doStartQrScan({ facingMode: { exact: 'environment' } }, config);
+          return;
+        }
         if (cameraConfig.facingMode && typeof cameraConfig.facingMode === 'object') {
           console.log('[QR] Exact environment failed, retrying with soft facingMode');
           this._doStartQrScan({ facingMode: 'environment' }, config);

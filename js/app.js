@@ -1138,9 +1138,16 @@ const app = Vue.createApp({
       this.qrScannerInstance = new Html5Qrcode('qr-reader');
 
       const savedId = localStorage.getItem('selectedCameraId');
-      const cameraConfig = savedId || { facingMode: 'environment' };
+      if (savedId) {
+        this.selectedCameraId = savedId;
+      }
+      const cameraConfig = savedId || { facingMode: { exact: 'environment' } };
 
-      console.log('[QR] Starting camera:', savedId ? savedId.substring(0, 20) + '…' : 'facingMode: environment');
+      console.log('[QR] Starting camera:', savedId ? savedId.substring(0, 20) + '…' : 'facingMode: exact environment');
+      this._doStartQrScan(cameraConfig, config);
+    },
+
+    _doStartQrScan(cameraConfig, config) {
       this.qrScannerInstance.start(
         cameraConfig,
         config,
@@ -1163,23 +1170,32 @@ const app = Vue.createApp({
           }
         }).catch(() => {});
       }).catch((err) => {
-        const msg = (err && (err.message || String(err))) || '';
-        if (msg.includes('NotAllowedError') || msg.includes('Permission') || msg.includes('denied')) {
-          this.qrScanError = 'Доступ к камере запрещён. Разрешите доступ в настройках браузера.';
-        } else if (msg.includes('NotFoundError') || msg.includes('No device') || msg.includes('not found')
-          || msg.includes('Overconstrained') || msg.includes('Constraint')) {
-          this.qrScanError = 'Камера не найдена. Подключите камеру к компьютеру.';
-        } else if (msg.includes('NotReadableError') || msg.includes('in use')) {
-          this.qrScanError = 'Камера занята другим приложением. Закройте другие программы.';
-        } else if (msg.includes('not supported') || msg.includes('NotSupported')) {
-          this.qrScanError = 'Камера недоступна в этом браузере. '
-            + 'Используйте Chrome/Edge/Firefox. '
-            + 'Страница должна быть открыта через HTTPS, localhost или 127.0.0.1.';
-        } else {
-          this.qrScanError = 'Ошибка камеры: ' + msg.substring(0, 100);
+        if (cameraConfig.facingMode && typeof cameraConfig.facingMode === 'object') {
+          console.log('[QR] Exact environment failed, retrying with soft facingMode');
+          this._doStartQrScan({ facingMode: 'environment' }, config);
+          return;
         }
-        this.qrScannerState = 'error';
+        this._handleQrError(err);
       });
+    },
+
+    _handleQrError(err) {
+      const msg = (err && (err.message || String(err))) || '';
+      if (msg.includes('NotAllowedError') || msg.includes('Permission') || msg.includes('denied')) {
+        this.qrScanError = 'Доступ к камере запрещён. Разрешите доступ в настройках браузера.';
+      } else if (msg.includes('NotFoundError') || msg.includes('No device') || msg.includes('not found')
+        || msg.includes('Overconstrained') || msg.includes('Constraint')) {
+        this.qrScanError = 'Камера не найдена. Подключите камеру к компьютеру.';
+      } else if (msg.includes('NotReadableError') || msg.includes('in use')) {
+        this.qrScanError = 'Камера занята другим приложением. Закройте другие программы.';
+      } else if (msg.includes('not supported') || msg.includes('NotSupported')) {
+        this.qrScanError = 'Камера недоступна в этом браузере. '
+          + 'Используйте Chrome/Edge/Firefox. '
+          + 'Страница должна быть открыта через HTTPS, localhost или 127.0.0.1.';
+      } else {
+        this.qrScanError = 'Ошибка камеры: ' + msg.substring(0, 100);
+      }
+      this.qrScannerState = 'error';
     },
 
     switchCamera(deviceId) {

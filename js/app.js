@@ -1124,37 +1124,20 @@ const app = Vue.createApp({
         this.qrScannerState = 'error';
         return;
       }
-      navigator.mediaDevices.enumerateDevices().then(devices => {
-        const cams = devices.filter(d => d.kind === 'videoinput');
-        if (cams.length === 0) {
-          this.qrScanError = 'Камера не обнаружена. Подключите камеру и перезапустите сканер.';
-          this.qrScannerState = 'error';
-          return;
-        }
-        this._startQrScan(cams);
-      }).catch(() => {
-        this._startQrScan([]);
-      });
+      this._startQrScan();
     },
 
-    _startQrScan(cameras) {
+    _startQrScan() {
       const config = { fps: 20, qrbox: { width: 320, height: 320 } };
       this.qrScannerInstance = new Html5Qrcode('qr-reader');
 
-      const tryStart = (camera) => {
-        const maybeStr = typeof camera === 'string';
-        const label = maybeStr ? camera.substring(0, 20) + '…' : (camera.facingMode || 'default');
-        console.log('[QR] Camera:', maybeStr ? 'deviceId' : 'facingMode', label);
-        return this.qrScannerInstance.start(camera, config, (text) => this.onQrScanSuccess(text), () => {});
-      };
-
-      let promise;
-      if (cameras.length > 0) {
-        promise = tryStart({ facingMode: 'environment' }).catch(() => tryStart(cameras[0].deviceId));
-      } else {
-        promise = tryStart({ facingMode: 'environment' });
-      }
-      promise.then(() => {
+      console.log('[QR] Starting camera with facingMode: { exact: "environment" }');
+      this.qrScannerInstance.start(
+        { facingMode: { exact: 'environment' } },
+        config,
+        (text) => this.onQrScanSuccess(text),
+        () => {}
+      ).then(() => {
         const video = document.querySelector('#qr-reader video');
         if (video) {
           if (video.readyState >= 2) {
@@ -1163,13 +1146,13 @@ const app = Vue.createApp({
             video.addEventListener('playing', () => { this.qrVideoReady = true; }, { once: true });
           }
         }
-      });
-      promise.catch((err) => {
+      }).catch((err) => {
         const msg = (err && (err.message || String(err))) || '';
         if (msg.includes('NotAllowedError') || msg.includes('Permission') || msg.includes('denied')) {
           this.qrScanError = 'Доступ к камере запрещён. Разрешите доступ в настройках браузера.';
-        } else if (msg.includes('NotFoundError') || msg.includes('No device') || msg.includes('not found')) {
-          this.qrScanError = 'Камера не найдена. Подключите камеру к компьютеру.';
+        } else if (msg.includes('NotFoundError') || msg.includes('No device') || msg.includes('not found')
+          || msg.includes('Overconstrained') || msg.includes('Constraint')) {
+          this.qrScanError = 'Задняя камера не найдена. Подключите камеру к компьютеру.';
         } else if (msg.includes('NotReadableError') || msg.includes('in use')) {
           this.qrScanError = 'Камера занята другим приложением. Закройте другие программы.';
         } else if (msg.includes('not supported') || msg.includes('NotSupported')) {
@@ -1183,12 +1166,9 @@ const app = Vue.createApp({
       });
     },
 
-    onQrScanSuccess(decodedText) {
+    async onQrScanSuccess(decodedText) {
       if (this.qrScannerState !== 'scanning') return;
       console.log('[QR] Raw scan result:', decodedText.substring(0, 80));
-      if (this.qrScannerInstance) {
-        this.qrScannerInstance.stop().catch(() => {});
-      }
       const product = this.findProductByQrText(decodedText);
       if (!product) {
         this.qrScanError = 'Товар не найден по QR-коду: ' + decodedText.substring(0, 60);
@@ -1196,7 +1176,7 @@ const app = Vue.createApp({
         return;
       }
       this.showToast('Найден: ' + product.name);
-      this.closeQrScanner();
+      await this.closeQrScanner();
       this.selectProduct(product);
     },
 
@@ -1214,7 +1194,11 @@ const app = Vue.createApp({
       return match ? match[1] : null;
     },
 
-    restartQrScanner() {
+    async restartQrScanner() {
+      if (this.qrScannerInstance) {
+        try { await this.qrScannerInstance.stop(); } catch (e) { /* ignore */ }
+        this.qrScannerInstance = null;
+      }
       this.qrScannerState = 'scanning';
       this.qrScanResult = null;
       this.qrScanError = null;
@@ -1224,10 +1208,10 @@ const app = Vue.createApp({
       });
     },
 
-    closeQrScanner() {
+    async closeQrScanner() {
       if (this.qrScannerInstance) {
         try {
-          this.qrScannerInstance.stop().catch(() => {});
+          await this.qrScannerInstance.stop();
         } catch (e) { /* ignore */ }
         this.qrScannerInstance = null;
       }

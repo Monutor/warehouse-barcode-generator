@@ -1160,7 +1160,6 @@ const app = Vue.createApp({
           this.availableCameras = cams;
           if (cams.length > 0 && !this.selectedCameraId) {
             this.selectedCameraId = cams[0].deviceId;
-            localStorage.setItem('selectedCameraId', cams[0].deviceId);
           }
         }).catch(() => {});
       }).catch((err) => {

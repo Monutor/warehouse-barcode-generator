@@ -413,6 +413,7 @@ const app = Vue.createApp({
       qrVideoReady: false,
       availableCameras: [],
       selectedCameraId: null,
+      _switchingToCam0: false,
     };
   },
 
@@ -1113,6 +1114,7 @@ const app = Vue.createApp({
 
       this.availableCameras = [];
       this.selectedCameraId = null;
+      this._switchingToCam0 = false;
 
       this.$nextTick(() => {
         this.initQrScanner();
@@ -1163,30 +1165,34 @@ const app = Vue.createApp({
           }
         }
         navigator.mediaDevices.enumerateDevices().then(devices => {
-          let cams = devices.filter(d => d.kind === 'videoinput');
-          let backDeviceId = null;
+          let allCams = devices.filter(d => d.kind === 'videoinput');
+          let activeDeviceId = null;
           if (video && video.srcObject) {
             try {
               const track = video.srcObject.getVideoTracks()[0];
-              if (track) {
-                backDeviceId = track.getSettings().deviceId;
-              }
+              if (track) activeDeviceId = track.getSettings().deviceId;
             } catch (e) {}
           }
-          if (backDeviceId) {
-            cams = cams.filter(c => c.deviceId === backDeviceId || !this._isFrontCamera(c));
+          // Filter front, keep only first back camera (camera 0)
+          let cams = allCams.filter(c => !this._isFrontCamera(c));
+          const firstBack = cams.length > 0 ? cams[0].deviceId : null;
+          // Try to use first back camera; if facingMode started different, restart
+          if (activeDeviceId && firstBack && activeDeviceId !== firstBack && !this._switchingToCam0) {
+            this._switchingToCam0 = true;
+            this.selectedCameraId = firstBack;
+            localStorage.setItem('selectedCameraId', firstBack);
+            this.availableCameras = [cams[0]];
+            this.restartQrScanner();
+            return;
+          }
+          // Camera 0 is running or wasn't found
+          if (firstBack) {
+            this.selectedCameraId = firstBack;
+            localStorage.setItem('selectedCameraId', firstBack);
+            this.availableCameras = [cams[0]];
           } else {
-            cams = cams.filter(c => !this._isFrontCamera(c));
-          }
-          if (cams.length === 0) {
-            cams = devices.filter(d => d.kind === 'videoinput');
-          }
-          this.availableCameras = cams;
-          if (backDeviceId && cams.some(c => c.deviceId === backDeviceId)) {
-            this.selectedCameraId = backDeviceId;
-            localStorage.setItem('selectedCameraId', backDeviceId);
-          } else if (cams.length > 0 && !this.selectedCameraId) {
-            this.selectedCameraId = cams[0].deviceId;
+            this.availableCameras = allCams;
+            if (allCams.length > 0) this.selectedCameraId = allCams[0].deviceId;
           }
         }).catch(() => {});
       }).catch((err) => {

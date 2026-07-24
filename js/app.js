@@ -411,6 +411,8 @@ const app = Vue.createApp({
       qrScanResult: null,
       qrScanError: null,
       qrVideoReady: false,
+      availableCameras: [],
+      selectedCameraId: null,
     };
   },
 
@@ -1101,13 +1103,27 @@ const app = Vue.createApp({
       }
     },
 
-    openQrScanner() {
+    async openQrScanner() {
       vibrate();
       this.qrScannerOpen = true;
       this.qrScannerState = 'scanning';
       this.qrScanError = null;
       this.qrVideoReady = false;
       console.log('[QR] Opening scanner');
+
+      const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
+      const cams = devices.filter(d => d.kind === 'videoinput');
+      if (cams.length === 0) {
+        this.qrScanError = 'Камера не обнаружена. Подключите камеру и перезапустите сканер.';
+        this.qrScannerState = 'error';
+        return;
+      }
+      this.availableCameras = cams;
+
+      const savedId = localStorage.getItem('selectedCameraId');
+      const cam = cams.find(c => c.deviceId === savedId) || cams[0];
+      this.selectedCameraId = cam.deviceId;
+
       this.$nextTick(() => {
         this.initQrScanner();
       });
@@ -1130,10 +1146,11 @@ const app = Vue.createApp({
     _startQrScan() {
       const config = { fps: 20, qrbox: { width: 320, height: 320 } };
       this.qrScannerInstance = new Html5Qrcode('qr-reader');
+      const deviceId = this.selectedCameraId;
 
-      console.log('[QR] Starting camera with facingMode: { exact: "environment" }');
+      console.log('[QR] Starting camera deviceId:', deviceId.substring(0, 20) + '…');
       this.qrScannerInstance.start(
-        { facingMode: { exact: 'environment' } },
+        deviceId,
         config,
         (text) => this.onQrScanSuccess(text),
         () => {}
@@ -1146,13 +1163,16 @@ const app = Vue.createApp({
             video.addEventListener('playing', () => { this.qrVideoReady = true; }, { once: true });
           }
         }
+        navigator.mediaDevices.enumerateDevices().then(devices => {
+          this.availableCameras = devices.filter(d => d.kind === 'videoinput');
+        }).catch(() => {});
       }).catch((err) => {
         const msg = (err && (err.message || String(err))) || '';
         if (msg.includes('NotAllowedError') || msg.includes('Permission') || msg.includes('denied')) {
           this.qrScanError = 'Доступ к камере запрещён. Разрешите доступ в настройках браузера.';
         } else if (msg.includes('NotFoundError') || msg.includes('No device') || msg.includes('not found')
           || msg.includes('Overconstrained') || msg.includes('Constraint')) {
-          this.qrScanError = 'Задняя камера не найдена. Подключите камеру к компьютеру.';
+          this.qrScanError = 'Камера не найдена. Подключите камеру к компьютеру.';
         } else if (msg.includes('NotReadableError') || msg.includes('in use')) {
           this.qrScanError = 'Камера занята другим приложением. Закройте другие программы.';
         } else if (msg.includes('not supported') || msg.includes('NotSupported')) {
@@ -1164,6 +1184,13 @@ const app = Vue.createApp({
         }
         this.qrScannerState = 'error';
       });
+    },
+
+    switchCamera(deviceId) {
+      if (deviceId === this.selectedCameraId) return;
+      this.selectedCameraId = deviceId;
+      localStorage.setItem('selectedCameraId', deviceId);
+      this.restartQrScanner();
     },
 
     async onQrScanSuccess(decodedText) {

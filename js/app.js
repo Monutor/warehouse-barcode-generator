@@ -1118,16 +1118,16 @@ const app = Vue.createApp({
       }
       const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
       const cams = devices.filter(d => d.kind === 'videoinput');
-      if (cams.length === 0) {
-        this.qrScanError = 'Камера не обнаружена. Подключите камеру и перезапустите сканер.';
-        this.qrScannerState = 'error';
-        return;
-      }
-      this.availableCameras = cams;
 
-      const savedId = localStorage.getItem('selectedCameraId');
-      const cam = cams.find(c => c.deviceId === savedId) || cams[0];
-      this.selectedCameraId = cam.deviceId;
+      if (cams.length > 0) {
+        this.availableCameras = cams;
+        const savedId = localStorage.getItem('selectedCameraId');
+        const cam = cams.find(c => c.deviceId === savedId) || cams[0];
+        this.selectedCameraId = cam.deviceId;
+      } else {
+        this.availableCameras = [];
+        this.selectedCameraId = null;
+      }
 
       this.$nextTick(() => {
         this.initQrScanner();
@@ -1151,11 +1151,13 @@ const app = Vue.createApp({
     _startQrScan() {
       const config = { fps: 20, qrbox: { width: 320, height: 320 } };
       this.qrScannerInstance = new Html5Qrcode('qr-reader');
-      const deviceId = this.selectedCameraId;
+      const cameraConfig = this.selectedCameraId || { facingMode: 'environment' };
 
-      console.log('[QR] Starting camera deviceId:', deviceId.substring(0, 20) + '…');
+      console.log('[QR] Starting camera:', this.selectedCameraId
+        ? this.selectedCameraId.substring(0, 20) + '…'
+        : 'facingMode: environment');
       this.qrScannerInstance.start(
-        deviceId,
+        cameraConfig,
         config,
         (text) => this.onQrScanSuccess(text),
         () => {}
@@ -1169,7 +1171,11 @@ const app = Vue.createApp({
           }
         }
         navigator.mediaDevices.enumerateDevices().then(devices => {
-          this.availableCameras = devices.filter(d => d.kind === 'videoinput');
+          const cams = devices.filter(d => d.kind === 'videoinput');
+          this.availableCameras = cams;
+          if (cams.length > 0 && !this.selectedCameraId) {
+            this.selectedCameraId = cams[0].deviceId;
+          }
         }).catch(() => {});
       }).catch((err) => {
         const msg = (err && (err.message || String(err))) || '';

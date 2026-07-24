@@ -1111,6 +1111,11 @@ const app = Vue.createApp({
       this.qrVideoReady = false;
       console.log('[QR] Opening scanner');
 
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        this.qrScanError = 'Ваш браузер не поддерживает доступ к камере. Попробуйте Chrome, Firefox или Edge.';
+        this.qrScannerState = 'error';
+        return;
+      }
       const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
       const cams = devices.filter(d => d.kind === 'videoinput');
       if (cams.length === 0) {

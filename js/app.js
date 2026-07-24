@@ -408,6 +408,7 @@ const app = Vue.createApp({
       uploadResult: null,
       qrScannerOpen: false,
       _forceCam0DeviceId: null,
+      _cam0Retried: false,
       qrScannerState: 'idle', // idle | scanning | result | error
       qrScanResult: null,
       qrScanError: null,
@@ -1110,6 +1111,7 @@ const app = Vue.createApp({
       this.qrScanError = null;
       this.qrVideoReady = false;
       this._forceCam0DeviceId = null;
+      this._cam0Retried = false;
       console.log('[QR] Opening scanner');
 
       this.$nextTick(() => {
@@ -1145,7 +1147,7 @@ const app = Vue.createApp({
         config,
         (text) => this.onQrScanSuccess(text),
         () => {}
-      ).then(() => {
+      ).then(async () => {
         const video = document.querySelector('#qr-reader video');
         if (video) {
           if (video.readyState >= 2) {
@@ -1154,25 +1156,34 @@ const app = Vue.createApp({
             video.addEventListener('playing', () => { this.qrVideoReady = true; }, { once: true });
           }
         }
-        // Force camera 0: if active camera isn't first back camera, restart
-        if (video && video.srcObject && !this._forceCam0DeviceId) {
-          try {
+        try {
+          if (video && video.srcObject && !this._forceCam0DeviceId && !this._cam0Retried) {
             const track = video.srcObject.getVideoTracks()[0];
             const activeId = track.getSettings().deviceId;
-            navigator.mediaDevices.enumerateDevices().then(devices => {
-              const cams = devices.filter(d => d.kind === 'videoinput' && !this._isFrontCamera(d));
-              const firstBack = cams.length > 0 ? cams[0].deviceId : null;
-              if (firstBack && activeId !== firstBack) {
-                this._forceCam0DeviceId = firstBack;
-                this.restartQrScanner();
-              }
-            }).catch(() => {});
-          } catch (e) {}
+            console.log('[QR] Active camera:', activeId);
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const cams = devices.filter(d => d.kind === 'videoinput' && !this._isFrontCamera(d));
+            console.log('[QR] Back cameras:', cams.map(c => ({ label: c.label, deviceId: c.deviceId })));
+            const firstBack = cams.length > 0 ? cams[0].deviceId : null;
+            if (firstBack && activeId !== firstBack) {
+              console.log('[QR] Not camera 0, restarting with:', firstBack);
+              this._forceCam0DeviceId = firstBack;
+              this._cam0Retried = true;
+              try { await this.qrScannerInstance.stop(); } catch (e) {}
+              this.qrScannerInstance = new Html5Qrcode('qr-reader');
+              this._doStartQrScan(firstBack, config);
+              return;
+            } else {
+              console.log('[QR] Already on correct camera');
+            }
+          }
+        } catch (e) {
+          console.log('[QR] Force-camera error:', e);
         }
       }).catch((err) => {
         if (typeof cameraConfig === 'string') {
-          console.log('[QR] DeviceId failed, retrying with facingMode');
-          this._doStartQrScan({ facingMode: { exact: 'environment' } }, config);
+          console.log('[QR] Camera 0 failed');
+          this._handleQrError(err);
           return;
         }
         if (cameraConfig.facingMode && typeof cameraConfig.facingMode === 'object' && cameraConfig.facingMode.exact) {

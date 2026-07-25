@@ -1,6 +1,6 @@
 {
-  "version": 1784830467076,
-  "updatedAt": "2026-07-23T18:14:27.076Z",
+  "version": 1784969918740,
+  "updatedAt": "2026-07-25T08:58:38.740Z",
   "products": [
     {
       "article": "400249707",
@@ -77276,6 +77276,471 @@
       "article": "400199565",
       "name": "Э/щипцы Brayer BR3336",
       "barcode": "9120099333948"
+    },
+    {
+      "article": "400365272",
+      "name": "RF Gorenje NRM7201SBXL4",
+      "barcode": "3838782901850"
+    },
+    {
+      "article": "20080073",
+      "name": "RF Grundig GKPN66930FXD",
+      "barcode": "4680037177621"
+    },
+    {
+      "article": "400457389",
+      "name": "RF Hisense RB5K330GSFE",
+      "barcode": "6921727092526"
+    },
+    {
+      "article": "400234753",
+      "name": "RF Hotpoint HFTS 640 X",
+      "barcode": "8690842576515"
+    },
+    {
+      "article": "400430745",
+      "name": "VC Dreame Z20 Aqua Cycle",
+      "barcode": "2040043074574"
+    },
+    {
+      "article": "400574267",
+      "name": "(А)RF Hisense RS628P5SG1",
+      "barcode": "2040057426710"
+    },
+    {
+      "article": "400719490",
+      "name": "(А)SW Geozon G-W34GRY gr",
+      "barcode": "4673726821691"
+    },
+    {
+      "article": "400474672",
+      "name": "(А)TV Horizont 24HDS25BY",
+      "barcode": "4814032013367"
+    },
+    {
+      "article": "400852637",
+      "name": "(А)WDM Gorenje WD2PA1X64A2DGW/C серая",
+      "barcode": "3838782984211"
+    },
+    {
+      "article": "4258758",
+      "name": "(А)WM Hisense WF5S1043BB",
+      "barcode": "2000425875816"
+    },
+    {
+      "article": "400159610",
+      "name": "(А)Блендер Braun HB701AI-MQ7075X",
+      "barcode": "8021098004246"
+    },
+    {
+      "article": "400597732",
+      "name": "(А)Лампа Nav 94 244",
+      "barcode": "2040059773218"
+    },
+    {
+      "article": "400513836",
+      "name": "(А)Массажер WEASTRO MGSM-004M Wh",
+      "barcode": "6974099893727"
+    },
+    {
+      "article": "402141253",
+      "name": "(А)Науш. Honor Choice 5504AGYV",
+      "barcode": "6975840261291"
+    },
+    {
+      "article": "400962906",
+      "name": "(А)Сушка Kitfort КТ-1946",
+      "barcode": "4620129513005"
+    },
+    {
+      "article": "401190465",
+      "name": "(А)Фен GA.МА IQ 2 PERFETTO Bl",
+      "barcode": "8023277146020"
+    },
+    {
+      "article": "401190564",
+      "name": "(А)Фен GA.МА IQ 2 PERFETTO P",
+      "barcode": "8023277148949"
+    },
+    {
+      "article": "30100607",
+      "name": "(В)TC Xiaomi Pad SE 4/128GB Green 49271",
+      "barcode": "2003010060710"
+    },
+    {
+      "article": "400426460",
+      "name": "Вакуумизатор CASO HC 170",
+      "barcode": "4038437013580"
+    },
+    {
+      "article": "402037108",
+      "name": "(ВМП)PDA Apple iPhone 14 128 ГБ, Белый (",
+      "barcode": "204020371081676584"
+    },
+    {
+      "article": "30077356",
+      "name": "(И)NB Apple MacBook Pro 14 M4P 24/512 SB",
+      "barcode": "0195949874789"
+    },
+    {
+      "article": "20089915",
+      "name": "(И)RF Carrera CRRF827",
+      "barcode": "2002008991517"
+    },
+    {
+      "article": "50179251",
+      "name": "(И)Клав. K980 черная (920-013768)",
+      "barcode": "2005017925122"
+    },
+    {
+      "article": "400458373",
+      "name": "М/кам. Beko B3RFNK292G",
+      "barcode": "4680037178802"
+    },
+    {
+      "article": "402141434",
+      "name": "(МП)NB Honor MagicBook X14 GDG-X [5301AL",
+      "barcode": "204021414341276400"
+    },
+    {
+      "article": "400694298",
+      "name": "(МП)NB SkyX SmartLight Gr",
+      "barcode": "204006942981570889"
+    },
+    {
+      "article": "401293858",
+      "name": "(МП)Sim карта Билайн Эксклюзивный непубл",
+      "barcode": "204012938581574755"
+    },
+    {
+      "article": "401291384",
+      "name": "(МП)Sim карта Теле2 Эксклюзивный непубли",
+      "barcode": "204012913841174755"
+    },
+    {
+      "article": "400500681",
+      "name": "(МП)SSDP Netac NT01Z7S-960G-32BK",
+      "barcode": "692633722784954496"
+    },
+    {
+      "article": "400514034",
+      "name": "(МП)VC HALMAN D800 Dream",
+      "barcode": "4603312632103"
+    },
+    {
+      "article": "402104364",
+      "name": "(МП)VC Polaris IQ Home PVCR 4750 (PVCR 4",
+      "barcode": "505553919544972303"
+    },
+    {
+      "article": "401413222",
+      "name": "(МП)VC Polaris PVCR 4750 WIFI IQ Home бе",
+      "barcode": "505553919544922241"
+    },
+    {
+      "article": "400604619",
+      "name": "(МП)VC VOXLEN VT-DH010A Gp/Gr",
+      "barcode": "204652635501767787"
+    },
+    {
+      "article": "401149115",
+      "name": "(МП)А/гриль DEMIAND Luneo Bl",
+      "barcode": "60356365553563352"
+    },
+    {
+      "article": "400458591",
+      "name": "(МП)А/гриль Kitfort КТ-8105",
+      "barcode": "463037260348431294"
+    },
+    {
+      "article": "400888008",
+      "name": "(МП)А/гриль LOWENGRASS MN-2001 Gun/Me",
+      "barcode": "204008880081767845"
+    },
+    {
+      "article": "401181879",
+      "name": "(МП)Аккум. Lunatek _10000 D/Gr",
+      "barcode": "216094048200274274"
+    },
+    {
+      "article": "400397000",
+      "name": "(МП)Батарейка CROMEX 455595",
+      "barcode": "4606224339238"
+    },
+    {
+      "article": "402032227",
+      "name": "(МП)Брюки для детей КВАРК Лук Штаны мусл",
+      "barcode": "204020322271568491"
+    },
+    {
+      "article": "400798774",
+      "name": "(МП)Вакуумизатор Otta&r черный Bl",
+      "barcode": "204007987741571842"
+    },
+    {
+      "article": "400365401",
+      "name": "(МП)В/выт. MEFERI AIRBOX60BK ULTRA",
+      "barcode": "697629225801362032"
+    },
+    {
+      "article": "400503800",
+      "name": "(МП)В/выт. Weis. Integra 850 PB WH",
+      "barcode": "4393720605997"
+    },
+    {
+      "article": "400422881",
+      "name": "(МП)Вент. Centek CT-5006 Wh",
+      "barcode": "468035302037340100"
+    },
+    {
+      "article": "400478372",
+      "name": "(МП)В/Э/пан. Maunfeld AVCE3024SBK",
+      "barcode": "466024801543132610"
+    },
+    {
+      "article": "401276659",
+      "name": "(МП)Дозатор для масла и уксуса нет бренд",
+      "barcode": "204012766591972947"
+    },
+    {
+      "article": "401712809",
+      "name": "(МП)ЗУ Apple MagSafe, 1 м Wh",
+      "barcode": "204017128091575863"
+    },
+    {
+      "article": "400471653",
+      "name": "(МП)Измел. MEFERI MFD560 PUSH ULTRA",
+      "barcode": "697629225707862032"
+    },
+    {
+      "article": "400457446",
+      "name": "(МП)ИП Oasis PI-KWSG",
+      "barcode": "4670222832855"
+    },
+    {
+      "article": "400168413",
+      "name": "(МП)Картридж T2 IC-H305XL_MP",
+      "barcode": "4610093682401"
+    },
+    {
+      "article": "401872220",
+      "name": "(МП)Кофе зерновой Bushido sensei Wh",
+      "barcode": "204018722201569809"
+    },
+    {
+      "article": "401283569",
+      "name": "(МП)Кофе зерновой Bushido Sensei Wh",
+      "barcode": "457245724356069798"
+    },
+    {
+      "article": "4001589",
+      "name": "(МП)КП Darina 1B KM 441 301 W",
+      "barcode": "4607152041736"
+    },
+    {
+      "article": "400422519",
+      "name": "(МП)Кресло TopChairs D-502 black",
+      "barcode": "468013452232464054"
+    },
+    {
+      "article": "400636757",
+      "name": "(МП)Кронштейн Kromax OFFICE-22",
+      "barcode": "461019870095631481"
+    },
+    {
+      "article": "401316088",
+      "name": "(МП)Лубриканты Ёska #Летняя ночь# (75мл)",
+      "barcode": "204013160881074408"
+    },
+    {
+      "article": "400762922",
+      "name": "(МП)Мотокоса  Hammer Мотокоса MTK420C B",
+      "barcode": "859568900751563072"
+    },
+    {
+      "article": "400334297",
+      "name": "(МП)Наб. HOMIUM 371594charm",
+      "barcode": "460374464567250336"
+    },
+    {
+      "article": "400817903",
+      "name": "(МП)Наб. Pasab. 44872",
+      "barcode": "869335738812371387"
+    },
+    {
+      "article": "400398379",
+      "name": "(МП)Науш. Atvel Tune Pro Q7",
+      "barcode": "468720539031848406"
+    },
+    {
+      "article": "402301874",
+      "name": "(МП)Наушники проводные Apple EarPods Typ",
+      "barcode": "204023018741475863"
+    },
+    {
+      "article": "402011735",
+      "name": "(МП)Наушники проводные Apple MWTY3 Wh",
+      "barcode": "204020117351475863"
+    },
+    {
+      "article": "401580896",
+      "name": "(МП)Наушники проводные Xiaomi Type-C Ear",
+      "barcode": "694181279315268214"
+    },
+    {
+      "article": "400403860",
+      "name": "(МП)Ножницы DASWERK 608904",
+      "barcode": "4606224416571"
+    },
+    {
+      "article": "400174520",
+      "name": "(МП)Отпар. Kitfort КТ-9149",
+      "barcode": "462012951544331294"
+    },
+    {
+      "article": "4129205",
+      "name": "(МП)Пароварка GFGRIL GFS-9D",
+      "barcode": "6920055090402"
+    },
+    {
+      "article": "400169654",
+      "name": "(МП)Подставка Brauberg 513617",
+      "barcode": "4606224353715"
+    },
+    {
+      "article": "400891461",
+      "name": "(МП)Полотенце банное BRG Optical White W",
+      "barcode": "460796634051353203"
+    },
+    {
+      "article": "400427704",
+      "name": "(МП)Пуф StoolGr 19A205VA-8167-55",
+      "barcode": "468013450413964054"
+    },
+    {
+      "article": "401975035",
+      "name": "(МП)Пылесос напольный Dastique Vumivac_C",
+      "barcode": "204019750351770360"
+    },
+    {
+      "article": "400821167",
+      "name": "(МП)Пылесос напольный Vumivac VUM02 Bl",
+      "barcode": "204008211671670360"
+    },
+    {
+      "article": "400522583",
+      "name": "(МП)С/TA Olmio F50 Bl",
+      "barcode": "465675809608468210"
+    },
+    {
+      "article": "400403434",
+      "name": "(МП)Сейф DASWERK SC-200EL Gp",
+      "barcode": "4606224445182"
+    },
+    {
+      "article": "401236286",
+      "name": "(МП)Синтезатор Нет бренда YAMAHA PSR-E36",
+      "barcode": "395874438800773322"
+    },
+    {
+      "article": "401327014",
+      "name": "(МП)Смартфон Samsung Samsung Galaxy S26",
+      "barcode": "204013270141174830"
+    },
+    {
+      "article": "400161712",
+      "name": "(МП)Соковарка ARDI Kuche AR-08",
+      "barcode": "4678598500248"
+    },
+    {
+      "article": "400491787",
+      "name": "(МП)Стеклооч. iBoto Win 390 PRO Gr",
+      "barcode": "204004917871961544"
+    },
+    {
+      "article": "400551747",
+      "name": "(МП)Стол Sheffilton 8676097303",
+      "barcode": "469065404907257307"
+    },
+    {
+      "article": "400472961",
+      "name": "(МП)Сушка Kitfort КТ-4952",
+      "barcode": "463027748957231294"
+    },
+    {
+      "article": "400577198",
+      "name": "(МП)Фен Scarlett SC-HD70I61",
+      "barcode": "505037033445362418"
+    },
+    {
+      "article": "400460591",
+      "name": "(МП)ЦФ Rekam Presto zoom 850 black",
+      "barcode": "2040046059110"
+    },
+    {
+      "article": "400977209",
+      "name": "(МП)Швабра hauswell Швабра SprayPro Lite",
+      "barcode": "204436257701372440"
+    },
+    {
+      "article": "401819463",
+      "name": "(МП)Штатив Golden Gold штатив Bl",
+      "barcode": "204018194631376229"
+    },
+    {
+      "article": "400644532",
+      "name": "(МП)Штатив Rekam MOBIPOD E-145",
+      "barcode": "204006445321115310"
+    },
+    {
+      "article": "4203443",
+      "name": "(МП)ЭЧ Kitfort КТ-657",
+      "barcode": "463001774303231294"
+    },
+    {
+      "article": "400368574",
+      "name": "(МП)ЭЧ Scarlett SC-EK27G88",
+      "barcode": "505037032388462418"
+    },
+    {
+      "article": "400207843",
+      "name": "Науш. Soundcore A3947G61",
+      "barcode": "0194644132330"
+    },
+    {
+      "article": "20110963",
+      "name": "(У)VC Tefal TY2038WO",
+      "barcode": "2002011096315"
+    },
+    {
+      "article": "401790178",
+      "name": "(У)Глад.доска Welle W11033E",
+      "barcode": "2040179017810"
+    },
+    {
+      "article": "50181543",
+      "name": "(У)Кофейник Rondell RDS-499",
+      "barcode": "2005018154316"
+    },
+    {
+      "article": "50179567",
+      "name": "(У)Кресло ZONE 51 51 Z51-KIT-PI",
+      "barcode": "2005017956713"
+    },
+    {
+      "article": "40080317",
+      "name": "(У)Кух.маш. Kenwood KVL65.001WH",
+      "barcode": "2004008031712"
+    },
+    {
+      "article": "20105805",
+      "name": "(У)Фен Babyliss 6710DE",
+      "barcode": "2002010580518"
+    },
+    {
+      "article": "20098047",
+      "name": "(У)ЭЧ Hi EK-18S15",
+      "barcode": "2002009804717"
     }
   ]
 }

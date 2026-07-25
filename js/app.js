@@ -1191,14 +1191,7 @@ const app = Vue.createApp({
 
     _startQrScan() {
       const config = {
-        fps: 20,
-        qrbox: (viewfinderWidth, viewfinderHeight) => {
-          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-          const size = Math.min(320, Math.floor(minEdge * 0.8));
-          console.log('[QR] qrbox computed:', { viewfinderWidth, viewfinderHeight, size });
-          return { width: size, height: size };
-        },
-        aspectRatio: 1.0
+        fps: 10
       };
       this.qrScannerInstance = new Html5Qrcode('qr-reader');
       const camConfig = this._forceCam0DeviceId || { facingMode: { exact: 'environment' } };
@@ -1211,7 +1204,11 @@ const app = Vue.createApp({
         cameraConfig,
         config,
         (text) => this.onQrScanSuccess(text),
-        (errorMessage) => { console.log('[QR] Scan tick error:', errorMessage); }
+        (errorMessage) => {
+          if (!errorMessage.includes('No MultiFormat Readers were able to detect the code')) {
+            console.log('[QR] Scan tick error:', errorMessage);
+          }
+        }
       ).then(async () => {
         const video = document.querySelector('#qr-reader video');
         if (video) {
@@ -1251,8 +1248,10 @@ const app = Vue.createApp({
         }
       }).catch((err) => {
         if (typeof cameraConfig === 'string') {
-          console.log('[QR] Camera 0 failed');
-          this._handleQrError(err);
+          console.log('[QR] Saved deviceId failed, clearing and retrying with facingMode');
+          localStorage.removeItem('qrLastCameraId');
+          this._forceCam0DeviceId = null;
+          this._doStartQrScan({ facingMode: { exact: 'environment' } }, config);
           return;
         }
         if (cameraConfig.facingMode && typeof cameraConfig.facingMode === 'object' && cameraConfig.facingMode.exact) {
@@ -1274,9 +1273,6 @@ const app = Vue.createApp({
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
         this.qrAllCameras = devices.filter(d => d.kind === 'videoinput');
-        if (this.qrAllCameras.length > 1) {
-          this.qrShowCameraList = true;
-        }
       } catch (e) {
         console.log('[QR] Failed to enumerate cameras for list:', e);
       }
@@ -1339,6 +1335,9 @@ const app = Vue.createApp({
         try { await this.qrScannerInstance.stop(); } catch (e) { /* ignore */ }
         this.qrScannerInstance = null;
       }
+      localStorage.removeItem('qrLastCameraId');
+      this._forceCam0DeviceId = null;
+      this._cam0Retried = false;
       this.qrScannerState = 'scanning';
       this.qrScanResult = null;
       this.qrScanError = null;

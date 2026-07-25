@@ -1146,6 +1146,10 @@ button {
   overflow: hidden;
 }
 
+#qr-shaded-region {
+  display: none !important;
+}
+
 .qr-scanner-container video {
   width: 100%;
   display: block;

@@ -1117,6 +1117,19 @@ const app = Vue.createApp({
       }
     },
 
+    async _stopScanning() {
+      if (this._qrScanInterval) {
+        clearInterval(this._qrScanInterval);
+        this._qrScanInterval = null;
+      }
+      if (this._qrStream) {
+        this._qrStream.getTracks().forEach(t => t.stop());
+        this._qrStream = null;
+      }
+      const video = document.getElementById('qr-video');
+      if (video) video.srcObject = null;
+    },
+
     openQrScanner() {
       vibrate();
       this.qrScannerOpen = true;
@@ -1127,16 +1140,18 @@ const app = Vue.createApp({
       this.qrShowCameraList = false;
       this.qrTorchOn = false;
       this.qrAllCameras = [];
-      this._qrScannerInstance = null;
+      this._qrStream = null;
+      this._qrScanInterval = null;
       this.$nextTick(() => { this._initScanner(); });
     },
 
     selectQrCamera(deviceId) {
       this.qrSelectedCameraId = deviceId;
       this.qrTorchOn = false;
-      if (this._qrScannerInstance) {
-        this._qrScannerInstance.setCamera({ deviceId });
+      if (this._qrStream) {
+        this._stopScanning();
         this.qrShowCameraList = false;
+        this.$nextTick(() => { this._initScanner(); });
         return;
       }
       this.qrShowCameraList = false;
@@ -1163,10 +1178,7 @@ const app = Vue.createApp({
     },
 
     switchQrCamera(deviceId) {
-      if (this._qrScannerInstance) {
-        this._qrScannerInstance.destroy();
-        this._qrScannerInstance = null;
-      }
+      this._stopScanning();
       this.qrSelectedCameraId = deviceId;
       this.qrVideoReady = false;
       this.qrShowCameraList = false;
@@ -1175,14 +1187,9 @@ const app = Vue.createApp({
     },
 
     async toggleQrTorch() {
-      if (!this._qrScannerInstance) return;
+      if (!this._qrStream) return;
       const newState = !this.qrTorchOn;
-      const supported = await this._qrScannerInstance.setTorch(newState);
-      if (supported) {
-        this.qrTorchOn = newState;
-        return;
-      }
-      const track = this._qrScannerInstance.videoTrack();
+      const track = this._qrStream.getVideoTracks()[0];
       if (track) {
         try {
           await track.applyConstraints({ advanced: [{ torch: newState }] });
@@ -1221,34 +1228,42 @@ const app = Vue.createApp({
         this.qrScannerState = 'error';
         return;
       }
-      const { QrScanner } = cam2qrModule;
-      const cameraConfig = this.qrSelectedCameraId
-        ? { deviceId: this.qrSelectedCameraId }
-        : { facing: 'environment' };
-      this._qrScannerInstance = new QrScanner(videoEl, {
-        camera: cameraConfig,
-        maxScansPerSecond: 10,
-        useWorker: false,
-        useNativeDetector: true,
-        onDecode: (result) => this.onQrScanSuccess(result.text),
-        onError: (error) => {
-          if (error.name !== 'DecodeError') {
-            console.log('[QR] Camera error:', error.code || error.message);
-          }
-        }
-      });
-      videoEl.addEventListener('playing', () => {
+      const { decode } = cam2qrModule;
+      const constraints = this.qrSelectedCameraId
+        ? { video: { deviceId: { exact: this.qrSelectedCameraId }, width: { ideal: 1280 }, height: { ideal: 720 } } }
+        : { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } };
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        this._qrStream = stream;
+        videoEl.srcObject = stream;
+        await videoEl.play();
         this.qrVideoReady = true;
         this._listQrCameras();
-      }, { once: true });
-      try {
-        await this._qrScannerInstance.start();
-        if (!this.qrVideoReady) {
-          this.qrVideoReady = true;
-          this._listQrCameras();
-        }
+        this._qrScanInterval = setInterval(() => {
+          this._manualDecode(decode, videoEl);
+        }, 200);
       } catch (err) {
         this._handleQrError(err);
+      }
+    },
+
+    _manualDecode(decode, videoEl) {
+      if (!this._qrStream || videoEl.videoWidth === 0) return;
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = videoEl.videoWidth;
+        canvas.height = videoEl.videoHeight;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(videoEl, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const result = decode(imageData, { tryHarder: true });
+        if (result) {
+          clearInterval(this._qrScanInterval);
+          this._qrScanInterval = null;
+          this.onQrScanSuccess(result.text);
+        }
+      } catch (e) {
+        // Ignore decode errors
       }
     },
 
@@ -1305,10 +1320,7 @@ const app = Vue.createApp({
     },
 
     async restartQrScanner() {
-      if (this._qrScannerInstance) {
-        try { this._qrScannerInstance.destroy(); } catch (e) { }
-        this._qrScannerInstance = null;
-      }
+      this._stopScanning();
       this.qrScannerState = 'scanning';
       this.qrScanResult = null;
       this.qrScanError = null;
@@ -1318,10 +1330,7 @@ const app = Vue.createApp({
     },
 
     async closeQrScanner() {
-      if (this._qrScannerInstance) {
-        try { this._qrScannerInstance.destroy(); } catch (e) { }
-        this._qrScannerInstance = null;
-      }
+      this._stopScanning();
       this.qrScannerOpen = false;
       this.qrScannerState = 'idle';
       this.qrScanResult = null;

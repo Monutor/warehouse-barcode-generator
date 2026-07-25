@@ -1170,8 +1170,8 @@ const app = Vue.createApp({
 
     async _listQrCameras() {
       try {
-        const cam2qrModule = await this._getCam2qr();
-        this.qrAllCameras = await cam2qrModule.listCameras();
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        this.qrAllCameras = devices.filter(d => d.kind === 'videoinput');
       } catch (e) {
         this.qrAllCameras = [];
       }
@@ -1192,7 +1192,7 @@ const app = Vue.createApp({
       const track = this._qrStream.getVideoTracks()[0];
       if (track) {
         try {
-          await track.applyConstraints({ advanced: [{ torch: newState }] });
+          await track.applyConstraints({ torch: newState });
           this.qrTorchOn = newState;
         } catch (e) {
           console.log('[QR] Torch not supported');
@@ -1200,14 +1200,12 @@ const app = Vue.createApp({
       }
     },
 
-    _getCam2qr() {
-      if (!this._cam2qrPromise) {
-        this._cam2qrPromise = import('https://esm.sh/cam2qr@1.1.1');
-      }
-      return this._cam2qrPromise;
-    },
-
     async _initScanner() {
+      if (typeof jsQR === 'undefined') {
+        this.qrScanError = 'Библиотека сканирования не загружена. Обновите страницу.';
+        this.qrScannerState = 'error';
+        return;
+      }
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         this.qrScanError = 'Ваш браузер не поддерживает доступ к камере. Попробуйте Chrome, Firefox или Edge.';
         this.qrScannerState = 'error';
@@ -1219,16 +1217,6 @@ const app = Vue.createApp({
         this.qrScannerState = 'error';
         return;
       }
-      let cam2qrModule;
-      try {
-        cam2qrModule = await this._getCam2qr();
-      } catch (e) {
-        console.log('[QR] Failed to load cam2qr:', e);
-        this.qrScanError = 'Библиотека сканирования не загружена. Обновите страницу.';
-        this.qrScannerState = 'error';
-        return;
-      }
-      const { decode } = cam2qrModule;
       const constraints = this.qrSelectedCameraId
         ? { video: { deviceId: { exact: this.qrSelectedCameraId }, width: { ideal: 1280 }, height: { ideal: 720 } } }
         : { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } };
@@ -1240,30 +1228,26 @@ const app = Vue.createApp({
         this.qrVideoReady = true;
         this._listQrCameras();
         this._qrScanInterval = setInterval(() => {
-          this._manualDecode(decode, videoEl);
+          if (!this._qrStream || videoEl.videoWidth === 0) return;
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = videoEl.videoWidth;
+            canvas.height = videoEl.videoHeight;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(videoEl, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const result = jsQR(imageData.data, imageData.width, imageData.height);
+            if (result) {
+              clearInterval(this._qrScanInterval);
+              this._qrScanInterval = null;
+              this.onQrScanSuccess(result.data);
+            }
+          } catch (e) {
+            // ignore decode errors
+          }
         }, 200);
       } catch (err) {
         this._handleQrError(err);
-      }
-    },
-
-    _manualDecode(decode, videoEl) {
-      if (!this._qrStream || videoEl.videoWidth === 0) return;
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = videoEl.videoWidth;
-        canvas.height = videoEl.videoHeight;
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        ctx.drawImage(videoEl, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const result = decode(imageData, { tryHarder: true });
-        if (result) {
-          clearInterval(this._qrScanInterval);
-          this._qrScanInterval = null;
-          this.onQrScanSuccess(result.text);
-        }
-      } catch (e) {
-        // Ignore decode errors
       }
     },
 

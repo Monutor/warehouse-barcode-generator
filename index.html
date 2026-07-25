@@ -394,6 +394,15 @@
                 <button class="qr-camera-btn" @click="toggleQrCameraList" title="Сменить камеру">
                   📷
                 </button>
+                <button
+                  v-if="qrTorchAvailable"
+                  class="qr-camera-btn"
+                  :class="{ active: qrTorchOn }"
+                  @click="toggleQrTorch"
+                  :title="qrTorchOn ? 'Выключить фонарик' : 'Включить фонарик'"
+                >
+                  🔦
+                </button>
                 <div v-if="qrShowCameraList" class="qr-camera-dropdown">
                   <button
                     v-for="cam in qrAllCameras"

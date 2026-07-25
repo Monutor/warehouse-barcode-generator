@@ -417,6 +417,8 @@ const app = Vue.createApp({
       qrSelectedCameraId: null,
       qrShowCameraList: false,
       qrAllCameras: [],
+      qrTorchAvailable: false,
+      qrTorchOn: false,
 
     };
   },
@@ -1119,6 +1121,8 @@ const app = Vue.createApp({
       this.qrSelectedCameraId = this._forceCam0DeviceId;
       this.qrAvailableCameras = [];
       this.qrShowCameraList = false;
+      this.qrTorchAvailable = false;
+      this.qrTorchOn = false;
       console.log('[QR] Opening scanner, starting camera directly', this._forceCam0DeviceId ? '(saved: ' + this._forceCam0DeviceId + ')' : '');
       this.$nextTick(() => { this.initQrScanner(); });
     },
@@ -1159,19 +1163,24 @@ const app = Vue.createApp({
       localStorage.setItem('qrLastCameraId', deviceId);
       this.qrVideoReady = false;
       this.qrShowCameraList = false;
+      this.qrTorchAvailable = false;
+      this.qrTorchOn = false;
       this.$nextTick(() => {
         this.qrScannerInstance = new Html5Qrcode('qr-reader');
-        const config = {
-          fps: 20,
-          qrbox: (viewfinderWidth, viewfinderHeight) => {
-            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            const size = Math.min(320, Math.floor(minEdge * 0.8));
-            return { width: size, height: size };
-          },
-          aspectRatio: 1.0
-        };
-        this._doStartQrScan(deviceId, config);
+        this._doStartQrScan(deviceId, { fps: 10 });
       });
+    },
+
+    async toggleQrTorch() {
+      if (!this.qrScannerInstance) return;
+      try {
+        const newState = !this.qrTorchOn;
+        await this.qrScannerInstance.applyVideoConstraints({ advanced: [{ torch: newState }] });
+        this.qrTorchOn = newState;
+        console.log('[QR] Torch:', newState ? 'ON' : 'OFF');
+      } catch (e) {
+        console.log('[QR] Torch toggle failed:', e);
+      }
     },
 
     initQrScanner() {
@@ -1243,8 +1252,16 @@ const app = Vue.createApp({
               console.log('[QR] Already on correct camera');
             }
           }
+          this.qrTorchOn = false;
         } catch (e) {
           console.log('[QR] Force-camera error:', e);
+        }
+        try {
+          const cap = this.qrScannerInstance.getRunningTrackCapabilities();
+          this.qrTorchAvailable = !!(cap && cap.torch);
+          console.log('[QR] Torch available:', this.qrTorchAvailable);
+        } catch (e) {
+          this.qrTorchAvailable = false;
         }
       }).catch((err) => {
         if (typeof cameraConfig === 'string') {
@@ -1342,6 +1359,8 @@ const app = Vue.createApp({
       this.qrScanResult = null;
       this.qrScanError = null;
       this.qrVideoReady = false;
+      this.qrTorchAvailable = false;
+      this.qrTorchOn = false;
       this.$nextTick(() => {
         this.initQrScanner();
       });
@@ -1359,6 +1378,8 @@ const app = Vue.createApp({
       this.qrScanResult = null;
       this.qrScanError = null;
       this.qrVideoReady = false;
+      this.qrTorchAvailable = false;
+      this.qrTorchOn = false;
     },
 
   },

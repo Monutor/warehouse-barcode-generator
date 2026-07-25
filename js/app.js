@@ -366,7 +366,8 @@ const app = Vue.createApp({
     return {
       searchQuery: '',
       searchInput: '',
-      instructionsOpen: true,
+      instructionsOpen: false,
+      statsOpen: true,
       activeSection: null,
       currentBarcodeShelf: null,
       barcodeSvg: '',
@@ -901,6 +902,10 @@ const app = Vue.createApp({
       this.instructionsOpen = !this.instructionsOpen;
     },
 
+    toggleStats() {
+      this.statsOpen = !this.statsOpen;
+    },
+
     toggleFavorite(name) {
       const idx = this.favorites.indexOf(name);
       if (idx === -1) {
@@ -1260,13 +1265,6 @@ const app = Vue.createApp({
           this.qrTorchOn = false;
         } catch (e) {
           console.log('[QR] Force-camera error:', e);
-        }
-        try {
-          const cap = this.qrScannerInstance.getRunningTrackCapabilities();
-          this.qrTorchAvailable = !!(cap && cap.torch);
-          console.log('[QR] Torch available:', this.qrTorchAvailable);
-        } catch (e) {
-          this.qrTorchAvailable = false;
         }
       }).catch((err) => {
         if (typeof cameraConfig === 'string') {

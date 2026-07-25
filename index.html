@@ -60,14 +60,23 @@
         </div>
       </div>
 
-      <div class="stats-grid mb-4">
-        <div class="stat-card"><div class="num">{{ stats.totalSections }}</div><div class="label">Секций</div></div>
-        <div class="stat-card"><div class="num">{{ stats.totalShelves }}</div><div class="label">Стеллажей</div></div>
-        <div class="stat-card"><div class="num">{{ stats.totalPallets }}</div><div class="label">Поддонов</div></div>
-        <div class="stat-card"><div class="num">{{ stats.totalZones }}</div><div class="label">Зон</div></div>
-        <div class="stat-card"><div class="num">{{ stats.totalProducts }}</div><div class="label">Товаров</div></div>
+      <div class="instruction-card mb-3">
+        <div class="instruction-header" @click="toggleStats" role="button" tabindex="0">
+          <span class="instruction-icon">📊</span>
+          <span class="instruction-title">Статистика</span>
+          <span class="instruction-toggle">{{ statsOpen ? '▲' : '▼' }}</span>
+        </div>
+        <template v-if="statsOpen">
+          <div class="stats-grid mb-2 mt-2">
+            <div class="stat-card"><div class="num">{{ stats.totalSections }}</div><div class="label">Секций</div></div>
+            <div class="stat-card"><div class="num">{{ stats.totalShelves }}</div><div class="label">Стеллажей</div></div>
+            <div class="stat-card"><div class="num">{{ stats.totalPallets }}</div><div class="label">Поддонов</div></div>
+            <div class="stat-card"><div class="num">{{ stats.totalZones }}</div><div class="label">Зон</div></div>
+            <div class="stat-card"><div class="num">{{ stats.totalProducts }}</div><div class="label">Товаров</div></div>
+          </div>
+          <div v-if="formattedDataDate" class="text-muted small text-center mb-2">База обновлена: {{ formattedDataDate }}</div>
+        </template>
       </div>
-      <div v-if="formattedDataDate" class="text-muted small text-center mb-3">База обновлена: {{ formattedDataDate }}</div>
 
       <!-- Инструкция -->
       <div class="instruction-card mb-3">
@@ -398,7 +407,6 @@
                   📷
                 </button>
                 <button
-                  v-if="qrTorchAvailable"
                   class="qr-camera-btn"
                   :class="{ active: qrTorchOn }"
                   @click="toggleQrTorch"

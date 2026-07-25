@@ -366,6 +366,7 @@ const app = Vue.createApp({
     return {
       searchQuery: '',
       searchInput: '',
+      instructionsOpen: true,
       activeSection: null,
       currentBarcodeShelf: null,
       barcodeSvg: '',
@@ -894,6 +895,10 @@ const app = Vue.createApp({
 
     isFavorite(name) {
       return this.favoriteSet.has(name);
+    },
+
+    toggleInstructions() {
+      this.instructionsOpen = !this.instructionsOpen;
     },
 
     toggleFavorite(name) {

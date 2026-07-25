@@ -71,26 +71,29 @@
 
       <!-- Инструкция -->
       <div class="instruction-card mb-3">
-        <div class="instruction-header">
+        <div class="instruction-header" @click="toggleInstructions" role="button" tabindex="0">
           <span class="instruction-icon">💡</span>
           <span class="instruction-title">Как пользоваться</span>
+          <span class="instruction-toggle">{{ instructionsOpen ? '▲' : '▼' }}</span>
         </div>
-        <ol class="instruction-list">
-          <li><span class="step-num">1</span> Выберите секцию нажатием на вкладку</li>
-          <li><span class="step-num">2</span> Нажмите на стеллаж — появятся полки</li>
-          <li><span class="step-num">3</span> Нажмите на полку/поддон/зону — появится штрих-код</li>
-        </ol>
-        <div class="instruction-subtitle">Штрих-код товара</div>
-        <ol class="instruction-list" start="4">
-          <li><span class="step-num">4</span> Нажмите «Штрих-код товара» → введите артикул, ШК или название → нажмите на карточку</li>
-        </ol>
-        <div class="instruction-subtitle">QR-сканер</div>
-        <ol class="instruction-list" start="5">
-          <li><span class="step-num">5</span> Нажмите «📷 QR» — разрешите доступ к камере</li>
-          <li><span class="step-num">6</span> Наведите камеру на QR-код ценника М.Видео в рамку</li>
-          <li><span class="step-num">7</span> Штрих-код товара откроется автоматически</li>
-          <li><span class="step-num">8</span> Нажмите «📷 Ещё QR» внизу, чтобы отсканировать следующий</li>
-        </ol>
+        <template v-if="instructionsOpen">
+          <ol class="instruction-list">
+            <li><span class="step-num">1</span> Выберите секцию нажатием на вкладку</li>
+            <li><span class="step-num">2</span> Нажмите на стеллаж — появятся полки</li>
+            <li><span class="step-num">3</span> Нажмите на полку/поддон/зону — появится штрих-код</li>
+          </ol>
+          <div class="instruction-subtitle">Штрих-код товара</div>
+          <ol class="instruction-list" start="4">
+            <li><span class="step-num">4</span> Нажмите «Штрих-код товара» → введите артикул, ШК или название → нажмите на карточку</li>
+          </ol>
+          <div class="instruction-subtitle">QR-сканер</div>
+          <ol class="instruction-list" start="5">
+            <li><span class="step-num">5</span> Нажмите «📷 QR» — разрешите доступ к камере</li>
+            <li><span class="step-num">6</span> Наведите камеру на QR-код ценника М.Видео в рамку</li>
+            <li><span class="step-num">7</span> Штрих-код товара откроется автоматически</li>
+            <li><span class="step-num">8</span> Нажмите «📷 Ещё QR» внизу, чтобы отсканировать следующий</li>
+          </ol>
+        </template>
       </div>
 
       <!-- Search (always visible) -->

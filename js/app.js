@@ -409,7 +409,7 @@ const app = Vue.createApp({
       uploadedNewProducts: [],
       uploadResult: null,
       qrScannerOpen: false,
-      _qrScannerInstance: null,
+      _cam2qrScanner: null,
       qrScannerState: 'idle', // idle | camera-select | scanning | result | error
       qrScanResult: null,
       qrScanError: null,
@@ -1118,13 +1118,9 @@ const app = Vue.createApp({
     },
 
     async _stopScanning() {
-      if (this._qrScanInterval) {
-        clearInterval(this._qrScanInterval);
-        this._qrScanInterval = null;
-      }
-      if (this._qrStream) {
-        this._qrStream.getTracks().forEach(t => t.stop());
-        this._qrStream = null;
+      if (this._cam2qrScanner) {
+        this._cam2qrScanner.destroy();
+        this._cam2qrScanner = null;
       }
       const video = document.getElementById('qr-video');
       if (video) video.srcObject = null;
@@ -1140,45 +1136,45 @@ const app = Vue.createApp({
       this.qrShowCameraList = false;
       this.qrTorchOn = false;
       this.qrAllCameras = [];
-      this._qrStream = null;
-      this._qrScanInterval = null;
       this.$nextTick(() => { this._initScanner(); });
     },
 
     selectQrCamera(deviceId) {
-      this.qrSelectedCameraId = deviceId;
-      this.qrTorchOn = false;
-      if (this._qrStream) {
-        this._stopScanning();
-        this.qrShowCameraList = false;
-        this.$nextTick(() => { this._initScanner(); });
-        return;
-      }
-      this.qrShowCameraList = false;
-      this.$nextTick(() => { this._initScanner(); });
+      this.switchQrCamera(deviceId);
     },
 
-    toggleQrCameraList() {
+    async toggleQrCameraList() {
       if (this.qrShowCameraList) {
         this.qrShowCameraList = false;
         return;
       }
-      this._listQrCameras().then(() => {
-        this.qrShowCameraList = true;
-      });
-    },
-
-    async _listQrCameras() {
       try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        this.qrAllCameras = devices.filter(d => d.kind === 'videoinput');
+        const cam2qr = window.__cam2qr || await import('https://cdn.jsdelivr.net/npm/cam2qr@1.1.1/dist/index.js');
+        const cameras = await cam2qr.listCameras();
+        this.qrAllCameras = cameras.map(cam => ({
+          id: cam.id,
+          label: cam.label,
+          facing: cam.facing,
+        }));
+        this.qrShowCameraList = true;
       } catch (e) {
         this.qrAllCameras = [];
       }
     },
 
-    switchQrCamera(deviceId) {
-      this._stopScanning();
+    async switchQrCamera(deviceId) {
+      if (this._cam2qrScanner) {
+        try {
+          await this._cam2qrScanner.setCamera({ deviceId });
+          this.qrSelectedCameraId = deviceId;
+          this.qrVideoReady = true;
+          this.qrShowCameraList = false;
+          this.qrTorchOn = false;
+          return;
+        } catch (e) {
+          this._stopScanning();
+        }
+      }
       this.qrSelectedCameraId = deviceId;
       this.qrVideoReady = false;
       this.qrShowCameraList = false;
@@ -1187,25 +1183,15 @@ const app = Vue.createApp({
     },
 
     async toggleQrTorch() {
-      if (!this._qrStream) return;
+      if (!this._cam2qrScanner) return;
       const newState = !this.qrTorchOn;
-      const track = this._qrStream.getVideoTracks()[0];
-      if (track) {
-        try {
-          await track.applyConstraints({ torch: newState });
-          this.qrTorchOn = newState;
-        } catch (e) {
-          console.log('[QR] Torch not supported');
-        }
+      const supported = await this._cam2qrScanner.setTorch(newState);
+      if (supported) {
+        this.qrTorchOn = newState;
       }
     },
 
     async _initScanner() {
-      if (typeof jsQR === 'undefined') {
-        this.qrScanError = 'Библиотека сканирования не загружена. Обновите страницу.';
-        this.qrScannerState = 'error';
-        return;
-      }
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         this.qrScanError = 'Ваш браузер не поддерживает доступ к камере. Попробуйте Chrome, Firefox или Edge.';
         this.qrScannerState = 'error';
@@ -1217,55 +1203,66 @@ const app = Vue.createApp({
         this.qrScannerState = 'error';
         return;
       }
-      const constraints = this.qrSelectedCameraId
-        ? { video: { deviceId: { exact: this.qrSelectedCameraId }, width: { ideal: 1280 }, height: { ideal: 720 } } }
-        : { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } };
       try {
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        this._qrStream = stream;
-        videoEl.srcObject = stream;
-        await videoEl.play();
-        this.qrVideoReady = true;
-        this._listQrCameras();
-        this._qrScanInterval = setInterval(() => {
-          if (!this._qrStream || videoEl.videoWidth === 0) return;
-          try {
-            const canvas = document.createElement('canvas');
-            canvas.width = videoEl.videoWidth;
-            canvas.height = videoEl.videoHeight;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            ctx.drawImage(videoEl, 0, 0);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const result = jsQR(imageData.data, imageData.width, imageData.height);
-            if (result) {
-              clearInterval(this._qrScanInterval);
-              this._qrScanInterval = null;
-              this.onQrScanSuccess(result.data);
+        const cam2qr = window.__cam2qr || await import('https://cdn.jsdelivr.net/npm/cam2qr@1.1.1/dist/index.js');
+        const { QrScanner } = cam2qr;
+
+        const scanner = new QrScanner(videoEl, {
+          camera: this.qrSelectedCameraId
+            ? { deviceId: this.qrSelectedCameraId }
+            : { facing: 'environment' },
+          onDecode: (result) => {
+            this.onQrScanSuccess(result.text);
+          },
+          onError: (error) => {
+            if (error.name === 'CameraError') {
+              this._handleQrError(error);
+              this.qrScannerState = 'error';
             }
-          } catch (e) {
-            // ignore decode errors
-          }
-        }, 200);
+          },
+          useWorker: false,
+          maxScansPerSecond: 10,
+          tryInverted: true,
+          stopOnDecode: true,
+          pauseOnHidden: true,
+        });
+
+        this._cam2qrScanner = scanner;
+        await scanner.start();
+        this.qrVideoReady = true;
+
+        try {
+          const cameras = await cam2qr.listCameras();
+          this.qrAllCameras = cameras.map(cam => ({
+            id: cam.id,
+            label: cam.label,
+            facing: cam.facing,
+          }));
+        } catch (e) {
+          this.qrAllCameras = [];
+        }
       } catch (err) {
         this._handleQrError(err);
       }
     },
 
     _handleQrError(err) {
-      const code = err && err.code;
+      const code = err?.code || '';
       const msg = (err && (err.message || String(err))) || '';
-      if (code === 'permission-denied' || msg.includes('NotAllowedError') || msg.includes('Permission') || msg.includes('denied')) {
+      if (code === 'permission-denied' || msg.includes('NotAllowedError') || msg.includes('Permission denied')) {
         this.qrScanError = 'Доступ к камере запрещён. Разрешите доступ в настройках браузера.';
-      } else if (code === 'camera-not-found' || msg.includes('NotFoundError') || msg.includes('No device') || msg.includes('not found') || msg.includes('Overconstrained')) {
+      } else if (code === 'camera-not-found' || msg.includes('NotFoundError') || msg.includes('Overconstrained')) {
         this.qrScanError = 'Камера не найдена. Подключите камеру к компьютеру.';
-      } else if (code === 'camera-in-use' || msg.includes('NotReadableError') || msg.includes('in use')) {
+      } else if (code === 'camera-in-use' || msg.includes('NotReadableError')) {
         this.qrScanError = 'Камера занята другим приложением. Закройте другие программы.';
-      } else if (code === 'insecure-context' || code === 'unsupported' || msg.includes('not supported') || msg.includes('NotSupported')) {
+      } else if (code === 'insecure-context' || code === 'unsupported' || msg.includes('NotSupported')) {
         this.qrScanError = 'Камера недоступна в этом браузере. '
           + 'Используйте Chrome/Edge/Firefox. '
           + 'Страница должна быть открыта через HTTPS, localhost или 127.0.0.1.';
+      } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('import')) {
+        this.qrScanError = 'Не удалось загрузить библиотеку сканирования. Проверьте подключение к интернету.';
       } else {
-        this.qrScanError = 'Ошибка камеры: ' + (code || msg.substring(0, 100));
+        this.qrScanError = 'Ошибка: ' + (code || msg.substring(0, 100));
       }
       this.qrScannerState = 'error';
     },

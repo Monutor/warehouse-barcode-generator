@@ -419,10 +419,10 @@
                 <div v-if="qrShowCameraList" class="qr-camera-dropdown">
                   <button
                     v-for="cam in qrAllCameras"
-                    :key="cam.deviceId"
+                    :key="cam.id"
                     class="qr-camera-option"
-                    :class="{ active: cam.deviceId === qrSelectedCameraId || (!qrSelectedCameraId && cam.label.toLowerCase().includes('back')) }"
-                    @click="switchQrCamera(cam.deviceId)"
+                    :class="{ active: cam.id === qrSelectedCameraId || (!qrSelectedCameraId && cam.label.toLowerCase().includes('back')) }"
+                    @click="switchQrCamera(cam.id)"
                   >
                     {{ cam.label || 'Камера' }}
                   </button>
@@ -532,7 +532,10 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js" integrity="sha384-Kk5SjBOKprEnGfyBWfD2zROFd1Cu8kwOXxG2GIhYPcoDL2rBJS9P8Ud1ZMy4412a" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" integrity="sha384-b5Ya4Bq3qCyz39m2ISh+4DxjAIljdeFwK/BsXLuj9gugaNwAcj/ia15fxNZL9Nlx" crossorigin="anonymous"></script>
+  <script type="module">
+    import { QrScanner, listCameras } from 'https://cdn.jsdelivr.net/npm/cam2qr@1.1.1/dist/index.js';
+    window.__cam2qr = { QrScanner, listCameras };
+  </script>
   <script src="js/app.js"></script>
 </body>
 </html>

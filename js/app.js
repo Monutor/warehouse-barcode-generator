@@ -1180,6 +1180,16 @@ const app = Vue.createApp({
       const supported = await this._qrScannerInstance.setTorch(newState);
       if (supported) {
         this.qrTorchOn = newState;
+        return;
+      }
+      const track = this._qrScannerInstance.videoTrack();
+      if (track) {
+        try {
+          await track.applyConstraints({ advanced: [{ torch: newState }] });
+          this.qrTorchOn = newState;
+        } catch (e) {
+          console.log('[QR] Torch not supported');
+        }
       }
     },
 
@@ -1217,8 +1227,9 @@ const app = Vue.createApp({
         : { facing: 'environment' };
       this._qrScannerInstance = new QrScanner(videoEl, {
         camera: cameraConfig,
-        tryHarder: true,
         maxScansPerSecond: 10,
+        useWorker: false,
+        useNativeDetector: true,
         onDecode: (result) => this.onQrScanSuccess(result.text),
         onError: (error) => {
           if (error.name !== 'DecodeError') {

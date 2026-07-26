@@ -241,15 +241,34 @@ class DataLayer {
   }
 
   async loadProducts() {
-    const resp = await fetch('https://raw.githubusercontent.com/Monutor/warehouse-barcode-generator/main/data/products.json');
+    const resp = await fetch('https://raw.githubusercontent.com/Monutor/DataBaseProducts/main/db.json');
     if (!resp.ok) return null;
-    const data = await resp.json();
-    this.products = data.products || [];
+    const raw = await resp.json();
+    this.products = [];
+    for (const item of raw) {
+      const article = String(item['Код товара'] || '').trim();
+      const name = String(item['Наименование'] || '').trim();
+      const barcode = String(item['ШК товара'] || '').trim();
+      if (!article || !name || !barcode) continue;
+      this.products.push({ article, name, barcode });
+    }
     this.productByArticle.clear();
     for (const p of this.products) {
       this.productByArticle.set(p.article, p);
     }
-    return data;
+
+    let commitDate = null;
+    try {
+      const commitsResp = await fetch('https://api.github.com/repos/Monutor/DataBaseProducts/commits?per_page=1');
+      if (commitsResp.ok) {
+        const commits = await commitsResp.json();
+        if (commits[0] && commits[0].commit.author.date) {
+          commitDate = new Date(commits[0].commit.author.date);
+        }
+      }
+    } catch {}
+
+    return { version: Date.now(), updatedAt: commitDate ? commitDate.toISOString() : null };
   }
 
   buildSearchIndex() {

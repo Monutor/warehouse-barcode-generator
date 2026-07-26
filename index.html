@@ -155,9 +155,7 @@
           <div class="mb-3">
             <input type="text" class="form-control form-control-lg" v-model="productSearchArticle" placeholder="Артикул, ШК (полный или последние 4+ цифр) или название..." aria-label="Поиск товара по артикулу, ШК или названию">
           </div>
-          <button class="btn btn-outline-primary w-100 py-2 mb-3" @click="openProductUpload">
-            📥 Обновить базу ШК
-          </button>
+
           <template v-for="product in foundProducts" :key="product.article">
             <div class="shelf-card" @click="selectProduct(product)">
               <div class="product-info">

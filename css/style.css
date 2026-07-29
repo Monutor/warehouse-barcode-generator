@@ -1568,12 +1568,12 @@ button {
 }
 
 /* ===== M.Video product search ===== */
-.shelf-grid--five-col {
-  grid-template-columns: repeat(5, 1fr);
+.shelf-grid--six-col {
+  grid-template-columns: repeat(6, 1fr);
 }
 
 @media screen and (max-width: 576px) {
-  .shelf-grid--five-col {
+  .shelf-grid--six-col {
     grid-template-columns: repeat(2, 1fr);
   }
 }

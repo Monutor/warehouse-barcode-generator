@@ -439,6 +439,7 @@ const app = Vue.createApp({
       qrTorchOn: false,
       mvideoViewOpen: false,
       mvideoArticle: '',
+      shelvesViewOpen: false,
 
     };
   },
@@ -1362,6 +1363,25 @@ const app = Vue.createApp({
       window.open('https://www.mvideo.ru/products/' + encodeURIComponent(article), '_blank');
     },
 
+    openShelves() {
+      vibrate();
+      this.shelvesViewOpen = true;
+      this.enteredSection = null;
+      this.selectedShelfLevels = null;
+      this.activeSection = null;
+      this.searchQuery = '';
+      this.searchInput = '';
+    },
+
+    closeShelves() {
+      this.shelvesViewOpen = false;
+      this.enteredSection = null;
+      this.selectedShelfLevels = null;
+      this.activeSection = null;
+      this.searchQuery = '';
+      this.searchInput = '';
+    },
+
   },
 
   async mounted() {
@@ -1391,6 +1411,8 @@ const app = Vue.createApp({
             this.closeProductUpload();
           } else if (this.mvideoViewOpen) {
             this.closeMvideoSearch();
+          } else if (this.shelvesViewOpen) {
+            this.closeShelves();
           } else if (this.barcodeModalOpen) {
             this.closeBarcodeModal();
           } else if (this.productSearchOpen) {

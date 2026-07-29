@@ -1405,18 +1405,18 @@ const app = Vue.createApp({
     // Close modals on Escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-          if (this.qrScannerOpen) {
+          if (this.barcodeModalOpen) {
+            this.closeBarcodeModal();
+          } else if (this.qrScannerOpen) {
             this.closeQrScanner();
           } else if (this.productUploadOpen) {
             this.closeProductUpload();
           } else if (this.mvideoViewOpen) {
             this.closeMvideoSearch();
-          } else if (this.shelvesViewOpen) {
-            this.closeShelves();
-          } else if (this.barcodeModalOpen) {
-            this.closeBarcodeModal();
           } else if (this.productSearchOpen) {
             this.closeProductSearch();
+          } else if (this.shelvesViewOpen) {
+            this.closeShelves();
           }
         }
     });

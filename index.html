@@ -105,10 +105,7 @@
         </template>
       </div>
 
-      <!-- Search (always visible) -->
-      <div class="mb-3">
-        <input type="search" class="form-control form-control-lg" :value="searchInput" @input="onSearchInput" placeholder="Поиск полок..." aria-label="Поиск полок">
-      </div>
+
 
       <!-- Search results or main content -->
       <template v-if="searchQuery.trim().length >= 2">
@@ -127,7 +124,7 @@
       <!-- Main content (no search or no results) -->
       <template v-if="searchQuery.trim().length < 2 || searchResults.length === 0">
         <!-- Quick actions: Favorites + Print + Products -->
-        <div class="shelf-grid shelf-grid--five-col mb-3">
+        <div class="shelf-grid shelf-grid--six-col mb-3">
           <button class="shelf-card fav" @click="selectFavorite">
             <span class="name">⭐ Избранное</span>
             <span class="icons"><span>{{ favoriteCount }}</span></span>
@@ -146,6 +143,10 @@
           </button>
           <button class="shelf-card mvideo" @click="openMvideoSearch">
             <span class="name">🔍 Поиск товара по артикулу</span>
+            <span class="icons"></span>
+          </button>
+          <button class="shelf-card shelves" @click="openShelves">
+            <span class="name">🏗 Полки склада</span>
             <span class="icons"></span>
           </button>
         </div>
@@ -196,84 +197,6 @@
           </div>
         </template>
 
-        <!-- Section tabs (hidden during product search) -->
-        <template v-if="!productSearchOpen">
-        <div class="section-tabs mb-3 section-tabs--scrollable">
-          <button v-for="sec in sectionList" :key="sec.name" class="section-tab" :class="{ active: enteredSection === sec.name }" @click="enterSection(sec.name)">
-            {{ sec.label }}<span class="count">{{ sec.count }}</span>
-          </button>
-          <button class="section-tab" :class="{ active: enteredSection === 'СЛУЖЕБНАЯ' }" @click="enterSection('СЛУЖЕБНАЯ')">
-            Служебные зоны<span class="count">{{ zones.length }}</span>
-          </button>
-          <button class="section-tab" :class="{ active: enteredSection === 'ПИКАП' }" @click="enterSection('ПИКАП')">
-            ПИКАП<span class="count">{{ pickupPallets.length }}</span>
-          </button>
-        </div>
-
-        <!-- Drilled-in section view -->
-        <template v-if="enteredSection">
-
-          <!-- Shelf levels view (selected rack's shelves) -->
-          <template v-if="selectedShelfLevels">
-            <div class="section-divider">{{ selectedShelfLevels }} — Полки <span class="divider-line"></span><button class="back-btn" @click="backFromSection">← Назад</button></div>
-            <div class="shelf-grid">
-              <div v-for="level in shelfLevels" :key="level.name" class="shelf-card" @click="selectShelf(level)">
-                <span class="name">{{ level.name }} (Ур. {{ level.level }})</span>
-                <span class="icons">
-                  <span class="action-icon" @click.stop="togglePrintQueue(level.name)">{{ isInPrintQueue(level.name) ? '🖨️' : '🖨' }}</span>
-                  <span class="action-icon" @click.stop="toggleFavorite(level.name)">{{ isFavorite(level.name) ? '★' : '☆' }}</span>
-                </span>
-              </div>
-            </div>
-          </template>
-
-          <!-- Section content: racks and pallets -->
-          <template v-else>
-            <template v-if="sectionRacks.length > 0">
-              <div class="section-divider">{{ enteredSection }} — Стеллажи <span class="divider-line"></span></div>
-              <div class="shelf-grid">
-                <div v-for="rack in getSectionRacksVisible(enteredSection)" :key="rack.name" class="shelf-card" @click="selectShelfForLevels(rack.name)">
-                  <span class="name">{{ rack.name }}</span>
-                  <span class="icons">
-                    <span class="action-icon" @click.stop="togglePrintQueue(rack.name)">{{ isInPrintQueue(rack.name) ? '🖨️' : '🖨' }}</span>
-                    <span class="action-icon" @click.stop="toggleFavorite(rack.name)">{{ isFavorite(rack.name) ? '★' : '☆' }}</span>
-                  </span>
-                </div>
-              </div>
-              <button v-if="getSectionHasMore(enteredSection)" class="btn btn-outline-primary mt-3 w-100 py-2" @click="loadMore(enteredSection, 'racks')">Показать ещё</button>
-            </template>
-
-            <!-- Зоны для СЛУЖЕБНАЯ -->
-            <template v-if="enteredSection === 'СЛУЖЕБНАЯ' && sectionZones.length > 0">
-              <div class="section-divider mt-3">{{ enteredSection }} — Зоны <span class="divider-line"></span></div>
-              <div class="shelf-grid">
-                <div v-for="zone in sectionZones" :key="zone.name" class="shelf-card special" @click="selectShelf(zone)">
-                  <span class="name">{{ zone.name }}</span>
-                  <span class="icons">
-                    <span class="action-icon" @click.stop="togglePrintQueue(zone.name)">{{ isInPrintQueue(zone.name) ? '🖨️' : '🖨' }}</span>
-                    <span class="action-icon" @click.stop="toggleFavorite(zone.name)">{{ isFavorite(zone.name) ? '★' : '☆' }}</span>
-                  </span>
-                </div>
-              </div>
-            </template>
-
-            <!-- Паллеты секции -->
-            <template v-if="sectionPallets.length > 0">
-              <div class="section-divider mt-3">{{ enteredSection }} — Поддоны <span class="divider-line"></span></div>
-              <div class="shelf-grid">
-                <div v-for="pallet in visibleSectionPallets" :key="pallet.name" class="shelf-card special" @click="selectShelf(pallet)">
-                  <span class="name">{{ pallet.name }}</span>
-                  <span class="icons">
-                    <span class="action-icon" @click.stop="togglePrintQueue(pallet.name)">{{ isInPrintQueue(pallet.name) ? '🖨️' : '🖨' }}</span>
-                    <span class="action-icon" @click.stop="toggleFavorite(pallet.name)">{{ isFavorite(pallet.name) ? '★' : '☆' }}</span>
-                  </span>
-                </div>
-              </div>
-              <button v-if="sectionPalletHasMore" class="btn btn-outline-primary mt-3 w-100 py-2" @click="loadMore(enteredSection, 'pallets')">Показать ещё</button>
-            </template>
-          </template>
-        </template>
-
         <!-- Favorites view -->
         <template v-if="activeSection === 'FAVORITES'">
           <div class="section-divider mb-3 d-flex justify-content-between align-items-center">
@@ -311,7 +234,6 @@
             </div>
             <button class="btn btn-primary w-100 py-2 mb-3" @click="printAll" :disabled="printLoading">🖨 Печать всех ({{ printShelves.length }})</button>
           </div>
-        </template>
         </template>
       </template>
     </template>

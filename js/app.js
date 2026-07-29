@@ -437,6 +437,8 @@ const app = Vue.createApp({
       qrShowCameraList: false,
       qrAllCameras: [],
       qrTorchOn: false,
+      mvideoViewOpen: false,
+      mvideoArticle: '',
 
     };
   },
@@ -1339,6 +1341,27 @@ const app = Vue.createApp({
       this.qrTorchOn = false;
     },
 
+    openMvideoSearch() {
+      vibrate();
+      this.mvideoViewOpen = true;
+      this.mvideoArticle = '';
+      this.enteredSection = null;
+      this.selectedShelfLevels = null;
+      this.activeSection = null;
+    },
+
+    closeMvideoSearch() {
+      this.mvideoViewOpen = false;
+      this.mvideoArticle = '';
+    },
+
+    searchOnMvideo() {
+      const article = this.mvideoArticle.trim();
+      if (!article) return;
+      vibrate();
+      window.open('https://www.mvideo.ru/products/' + encodeURIComponent(article), '_blank');
+    },
+
   },
 
   async mounted() {
@@ -1366,6 +1389,8 @@ const app = Vue.createApp({
             this.closeQrScanner();
           } else if (this.productUploadOpen) {
             this.closeProductUpload();
+          } else if (this.mvideoViewOpen) {
+            this.closeMvideoSearch();
           } else if (this.barcodeModalOpen) {
             this.closeBarcodeModal();
           } else if (this.productSearchOpen) {

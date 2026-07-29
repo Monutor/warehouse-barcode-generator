@@ -1566,3 +1566,55 @@ button {
 .upload-error p {
   margin: 8px 0;
 }
+
+/* ===== M.Video product search ===== */
+.shelf-grid--five-col {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+@media screen and (max-width: 576px) {
+  .shelf-grid--five-col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.mvideo-search-input {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.mvideo-search-input .form-control {
+  flex: 1;
+}
+
+.mvideo-search-input .btn {
+  flex-shrink: 0;
+}
+
+/* ===== M.Video quick action card ===== */
+.shelf-card.mvideo {
+  border-color: #e53935;
+  background: rgba(229, 57, 53, 0.08);
+}
+
+.shelf-card.mvideo .name {
+  color: #e53935;
+}
+
+.shelf-card.mvideo:hover {
+  background: rgba(229, 57, 53, 0.15);
+}
+
+[data-theme="dark"] .shelf-card.mvideo {
+  border-color: #ef5350;
+  background: rgba(239, 83, 80, 0.1);
+}
+
+[data-theme="dark"] .shelf-card.mvideo .name {
+  color: #ef9a9a;
+}
+
+[data-theme="dark"] .shelf-card.mvideo:hover {
+  background: rgba(239, 83, 80, 0.18);
+}

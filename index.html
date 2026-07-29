@@ -127,7 +127,7 @@
       <!-- Main content (no search or no results) -->
       <template v-if="searchQuery.trim().length < 2 || searchResults.length === 0">
         <!-- Quick actions: Favorites + Print + Products -->
-        <div class="shelf-grid shelf-grid--four-col mb-3">
+        <div class="shelf-grid shelf-grid--five-col mb-3">
           <button class="shelf-card fav" @click="selectFavorite">
             <span class="name">⭐ Избранное</span>
             <span class="icons"><span>{{ favoriteCount }}</span></span>
@@ -142,6 +142,10 @@
           </button>
           <button class="shelf-card qr" @click="openQrScanner">
             <span class="name">📷 QR товара</span>
+            <span class="icons"></span>
+          </button>
+          <button class="shelf-card mvideo" @click="openMvideoSearch">
+            <span class="name">🔍 Поиск товара по артикулу</span>
             <span class="icons"></span>
           </button>
         </div>
@@ -174,6 +178,21 @@
           </div>
           <div v-if="notFoundArticles.length > 0 && foundProducts.length > 0" class="text-center text-muted small mt-1">
             Не найдены: {{ notFoundArticles.join(', ') }}
+          </div>
+        </template>
+
+        <!-- M.Video product search -->
+        <template v-if="mvideoViewOpen">
+          <div class="section-divider d-flex justify-content-between align-items-center">
+            <span>🔍 Поиск товара по артикулу</span>
+            <button class="back-btn" @click="closeMvideoSearch">← Назад</button>
+          </div>
+          <div class="mvideo-search-input">
+            <input type="text" class="form-control form-control-lg" v-model="mvideoArticle" placeholder="Введите артикул товара..." @keyup.enter="searchOnMvideo">
+            <button class="btn btn-primary btn-lg" @click="searchOnMvideo">🌐 Открыть на M.Video</button>
+          </div>
+          <div class="text-center text-muted py-5">
+            Введите артикул товара и нажмите «Открыть на M.Video» — страница откроется в новой вкладке
           </div>
         </template>
 

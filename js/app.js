@@ -422,18 +422,19 @@ const app = Vue.createApp({
       productPanelBarcodeJpg: null,
        productPanelBarcodeLoading: false,
        productPanelBarcodeError: null,
-       qrScannerOpen: false,
-       _cam2qrScanner: null,
-       qrScannerState: 'idle', // idle | camera-select | scanning | result | error
-       qrScanResult: null,
-       qrScanError: null,
-       qrVideoReady: false,
-       qrSelectedCameraId: null,
-       qrShowCameraList: false,
-       qrAllCameras: [],
-       qrTorchOn: false,
-       qrZoomLevel: 1.0,
-       _qrVideoTrack: null,
+        qrScannerOpen: false,
+        _cam2qrScanner: null,
+        qrScannerState: 'idle', // idle | camera-select | scanning | result | error
+        qrScanResult: null,
+        qrScanError: null,
+        qrVideoReady: false,
+        qrSelectedCameraId: null,
+        qrShowCameraList: false,
+        qrAllCameras: [],
+        qrTorchOn: false,
+        qrZoomLevel: 1.0,
+        _qrVideoTrack: null,
+        qrZoomSupported: false,
       mvideoViewOpen: false,
       mvideoArticle: '',
       shelvesViewOpen: false,
@@ -1028,6 +1029,8 @@ const app = Vue.createApp({
        this.qrShowCameraList = false;
        this.qrTorchOn = false;
        this.qrAllCameras = [];
+       this.qrZoomLevel = 1.0;
+       this.qrZoomSupported = false;
        this.$nextTick(() => { this._initScanner(); });
     },
 
@@ -1095,13 +1098,14 @@ const app = Vue.createApp({
 
     async setQrZoom(value) {
       this.qrZoomLevel = parseFloat(value);
-      if (this._qrVideoTrack) {
+      if (this._qrVideoTrack && this.qrZoomSupported) {
         try {
           await this._qrVideoTrack.applyConstraints({
             advanced: [{ zoom: this.qrZoomLevel }]
           });
         } catch (e) {
-          console.warn('Failed to apply zoom:', e);
+          this.qrScanError = 'Не удалось применить зум. Ваша камера может не поддерживать эту функцию.';
+          this.qrScannerState = 'error';
         }
       }
     },
@@ -1150,7 +1154,17 @@ const app = Vue.createApp({
           const tracks = videoEl.srcObject.getTracks().filter(t => t.kind === 'video');
           if (tracks.length > 0) {
             this._qrVideoTrack = tracks[0];
+            try {
+              const capabilities = this._qrVideoTrack.getCapabilities();
+              this.qrZoomSupported = !!capabilities.zoom;
+            } catch (e) {
+              this.qrZoomSupported = false;
+            }
+          } else {
+            this.qrZoomSupported = false;
           }
+        } else {
+          this.qrZoomSupported = false;
         }
 
         try {
@@ -1237,6 +1251,8 @@ const app = Vue.createApp({
       this.qrScanError = null;
       this.qrVideoReady = false;
       this.qrTorchOn = false;
+      this.qrZoomLevel = 1.0;
+      this.qrZoomSupported = false;
     },
 
     openMvideoSearch() {

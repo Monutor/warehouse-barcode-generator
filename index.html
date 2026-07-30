@@ -61,11 +61,11 @@
       </div>
 
       <div class="instruction-card mb-3">
-        <div class="instruction-header" @click="toggleStats" role="button" tabindex="0">
+        <button type="button" class="instruction-header" @click="toggleStats">
           <span class="instruction-icon">📊</span>
           <span class="instruction-title">Статистика</span>
           <span class="instruction-toggle">{{ statsOpen ? '▲' : '▼' }}</span>
-        </div>
+        </button>
         <template v-if="statsOpen">
           <div class="stats-grid mb-2 mt-2">
             <div class="stat-card"><div class="num">{{ stats.totalSections }}</div><div class="label">Секций</div></div>
@@ -80,11 +80,11 @@
 
       <!-- Инструкция -->
       <div class="instruction-card mb-3">
-        <div class="instruction-header" @click="toggleInstructions" role="button" tabindex="0">
+        <button type="button" class="instruction-header" @click="toggleInstructions">
           <span class="instruction-icon">💡</span>
           <span class="instruction-title">Как пользоваться</span>
           <span class="instruction-toggle">{{ instructionsOpen ? '▲' : '▼' }}</span>
-        </div>
+        </button>
         <template v-if="instructionsOpen">
           <ol class="instruction-list">
             <li><span class="step-num">1</span> Выберите секцию нажатием на вкладку</li>
@@ -119,7 +119,7 @@
             <span class="icons"><span>{{ printCount }}</span></span>
           </button>
           <button class="shelf-card product" @click="openProductSearch">
-            <span class="name"><img src="icons/barcode-icon.svg" class="icon-img" alt=""> Штрих-код товара</span>
+            <span class="name"><img src="icons/barcode-icon.svg" class="icon-img" alt="" width="16" height="16"> Штрих-код товара</span>
             <span class="icons"></span>
           </button>
           <button class="shelf-card qr" @click="openQrScanner">
@@ -274,7 +274,7 @@
             <button class="back-btn" @click="closeMvideoSearch">← Назад</button>
           </div>
           <div class="mvideo-search-input">
-            <input type="text" class="form-control form-control-lg" v-model="mvideoArticle" placeholder="Введите артикул товара..." @keyup.enter="searchOnMvideo">
+            <input type="text" class="form-control form-control-lg" v-model="mvideoArticle" placeholder="Введите артикул товара..." @keyup.enter="searchOnMvideo" aria-label="Артикул товара для поиска на M.Video">
             <button class="btn btn-primary btn-lg" @click="searchOnMvideo">🌐 Открыть на M.Video</button>
           </div>
           <div class="text-center text-muted py-5">
@@ -341,71 +341,6 @@
       <div class="card shadow border-0 toast-card">
         <div class="card-body py-2 px-3">
           <span class="small">{{ toastMessage }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Upload modal -->
-    <div v-if="productUploadOpen" class="modal d-block modal-overlay" tabindex="-1" @click.self="closeProductUpload">
-      <div class="barcode-modal-dialog">
-        <div class="barcode-modal-header">
-          <span class="barcode-modal-title">📥 Обновление базы ШК товаров</span>
-          <button type="button" class="barcode-modal-close" @click="closeProductUpload">×</button>
-        </div>
-        <div class="barcode-modal-body">
-
-          <div v-if="uploadStep === 'idle'" class="upload-dropzone">
-            <p>Выберите CSV или XLSX-файл, выгруженный из SEW</p>
-            <input type="file" accept=".csv,.xlsx" @change="handleProductFile($event.target.files[0])" class="form-control">
-          </div>
-
-          <div v-if="uploadStep === 'preview'">
-            <p class="upload-summary">Найдено <strong>{{ uploadedNewProducts.length }}</strong> новых товаров</p>
-            <div v-if="uploadedNewProducts.length > 0" class="upload-preview-table-wrapper">
-              <table class="upload-preview-table">
-                <thead>
-                  <tr>
-                    <th>Артикул</th>
-                    <th>Наименование</th>
-                    <th>ШК</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="p in uploadedNewProducts" :key="p.article">
-                    <td>{{ p.article }}</td>
-                    <td class="upload-name">{{ p.name }}</td>
-                    <td class="upload-barcode">{{ p.barcode }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <p v-else class="text-muted">Все товары уже есть в базе.</p>
-          </div>
-
-          <div v-if="uploadStep === 'uploading'" class="upload-status">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p>Загрузка и слияние...</p>
-          </div>
-
-          <div v-if="uploadStep === 'done'" class="upload-status upload-success">
-            <p>✅ База обновлена!</p>
-            <p>Добавлено: {{ uploadResult.added }} товаров</p>
-            <p>Всего в базе: {{ uploadResult.total }} товаров</p>
-            <p class="text-muted small">Изменения появятся на сайте через 1-2 минуты.</p>
-            <button class="btn btn-primary" @click="closeProductUpload">Готово</button>
-          </div>
-
-          <div v-if="uploadStep === 'error'" class="upload-status upload-error">
-            <p>❌ Ошибка: {{ uploadResult?.error }}</p>
-            <button class="btn btn-primary" @click="openProductUpload">Попробовать снова</button>
-          </div>
-
-        </div>
-        <div class="barcode-modal-footer" v-if="uploadStep === 'preview'">
-          <button class="btn btn-primary" @click="confirmProductUpload" :disabled="uploadedNewProducts.length === 0">
-            ✅ Загрузить в базу
-          </button>
-          <button class="btn btn-outline-secondary" @click="closeProductUpload">Отмена</button>
         </div>
       </div>
     </div>
@@ -502,7 +437,7 @@
             </div>
             <div class="barcode-right-panel">
               <div class="barcode-right-panel-title">Артикул товара</div>
-              <input type="text" class="form-control" v-model="productSearchArticle" placeholder="Артикул, ШК или название..." />
+              <input type="text" class="form-control" v-model="productSearchArticle" placeholder="Артикул, ШК или название..." aria-label="Артикул, ШК или название товара" />
               <template v-for="product in foundProducts" :key="product.article">
                 <div class="shelf-card" @click="selectProductInPanel(product)">
                   <div class="product-info">

@@ -40,7 +40,7 @@ self.addEventListener('activate', (event) => {
         keys
           .filter((k) => k !== CACHE_NAME && k !== CDN_CACHE_NAME)
           .map((k) => caches.delete(k))
-      )
+      ).catch(() => {})
     )
   );
   self.clients.claim();

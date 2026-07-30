@@ -1077,9 +1077,17 @@ const app = Vue.createApp({
     async toggleQrTorch() {
       if (!this._cam2qrScanner) return;
       const newState = !this.qrTorchOn;
-      const supported = await this._cam2qrScanner.setTorch(newState);
-      if (supported) {
+      try {
+        const supported = await this._cam2qrScanner.setTorch(newState);
+        if (supported === false) {
+          this.qrScanError = 'Фонарик не поддерживается этой камерой.';
+          this.qrScannerState = 'error';
+          return;
+        }
         this.qrTorchOn = newState;
+      } catch (e) {
+        this.qrScanError = 'Не удалось включить фонарик. Возможно, камера не поддерживает его.';
+        this.qrScannerState = 'error';
       }
     },
 

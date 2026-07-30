@@ -423,15 +423,17 @@ const app = Vue.createApp({
        productPanelBarcodeLoading: false,
        productPanelBarcodeError: null,
        qrScannerOpen: false,
-      _cam2qrScanner: null,
-      qrScannerState: 'idle', // idle | camera-select | scanning | result | error
-      qrScanResult: null,
-      qrScanError: null,
-      qrVideoReady: false,
-      qrSelectedCameraId: null,
-      qrShowCameraList: false,
-      qrAllCameras: [],
-      qrTorchOn: false,
+       _cam2qrScanner: null,
+       qrScannerState: 'idle', // idle | camera-select | scanning | result | error
+       qrScanResult: null,
+       qrScanError: null,
+       qrVideoReady: false,
+       qrSelectedCameraId: null,
+       qrShowCameraList: false,
+       qrAllCameras: [],
+       qrTorchOn: false,
+       qrZoomLevel: 1.0,
+       _qrVideoTrack: null,
       mvideoViewOpen: false,
       mvideoArticle: '',
       shelvesViewOpen: false,
@@ -1091,6 +1093,19 @@ const app = Vue.createApp({
       }
     },
 
+    async setQrZoom(value) {
+      this.qrZoomLevel = parseFloat(value);
+      if (this._qrVideoTrack) {
+        try {
+          await this._qrVideoTrack.applyConstraints({
+            advanced: [{ zoom: this.qrZoomLevel }]
+          });
+        } catch (e) {
+          console.warn('Failed to apply zoom:', e);
+        }
+      }
+    },
+
     async _initScanner() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         this.qrScanError = 'Ваш браузер не поддерживает доступ к камере. Попробуйте Chrome, Firefox или Edge.';
@@ -1130,6 +1145,13 @@ const app = Vue.createApp({
         this._cam2qrScanner = scanner;
         await scanner.start();
         this.qrVideoReady = true;
+
+        if (videoEl && videoEl.srcObject) {
+          const tracks = videoEl.srcObject.getTracks().filter(t => t.kind === 'video');
+          if (tracks.length > 0) {
+            this._qrVideoTrack = tracks[0];
+          }
+        }
 
         try {
           const cameras = await cam2qr.listCameras();

@@ -1312,6 +1312,27 @@ button {
   background: #3a3a3a;
 }
 
+.qr-zoom-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+}
+
+.qr-zoom-slider {
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  width: 8px;
+  height: 120px;
+  background: var(--card-bg, #e0e0e0);
+  outline: none;
+  opacity: 0.7;
+}
+
+.qr-zoom-slider:hover {
+  opacity: 1;
+}
+
 /* ===== Print styles ===== */
 .print-area {
   display: none;

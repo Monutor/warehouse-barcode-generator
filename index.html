@@ -367,15 +367,18 @@
                 <button class="qr-camera-btn" @click="toggleQrCameraList" title="Сменить камеру">
                   📷
                 </button>
-                <button
-                  class="qr-camera-btn"
-                  :class="{ active: qrTorchOn }"
-                  @click="toggleQrTorch"
-                  :title="qrTorchOn ? 'Выключить фонарик' : 'Включить фонарик'"
-                >
-                  🔦
-                </button>
-                <div v-if="qrShowCameraList" class="qr-camera-dropdown">
+                 <button
+                   class="qr-camera-btn"
+                   :class="{ active: qrTorchOn }"
+                   @click="toggleQrTorch"
+                   :title="qrTorchOn ? 'Выключить фонарик' : 'Включить фонарик'"
+                 >
+                   🔦
+                 </button>
+                 <div class="qr-zoom-control">
+                   <input type="range" class="qr-zoom-slider" min="1" max="3" step="0.1" :value="qrZoomLevel" @input="setQrZoom($event.target.value)" title="Зум камеры">
+                 </div>
+                 <div v-if="qrShowCameraList" class="qr-camera-dropdown">
                   <button
                     v-for="cam in qrAllCameras"
                     :key="cam.id"

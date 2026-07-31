@@ -106,10 +106,9 @@
       </div>
 
 
-      <!-- Main content (no search or no results) -->
-      <template v-if="searchQuery.trim().length < 2 || searchResults.length === 0">
-        <!-- Quick actions: Favorites + Print + Products -->
-        <div class="shelf-grid shelf-grid--six-col mb-3">
+      <!-- Main content -->
+      <!-- Quick actions: Favorites + Print + Products -->
+      <div v-if="!shelvesViewOpen && !productSearchOpen && !mvideoViewOpen && activeSection !== 'FAVORITES' && activeSection !== 'PRINT'" class="shelf-grid shelf-grid--six-col mb-3">
           <button class="shelf-card fav" @click="selectFavorite">
             <span class="name">⭐ Избранное</span>
             <span class="icons"><span>{{ favoriteCount }}</span></span>
@@ -318,9 +317,8 @@
               </div>
             </div>
             <button class="btn btn-primary w-100 py-2 mb-3" @click="printAll" :disabled="printLoading">🖨 Печать всех ({{ printShelves.length }})</button>
-          </div>
+           </div>
         </template>
-      </template>
     </template>
 
     <!-- Update notification toast -->

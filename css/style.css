@@ -478,6 +478,21 @@ button {
   white-space: nowrap;
 }
 
+.copy-barcode-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 1px 3px;
+  opacity: 0.65;
+  vertical-align: middle;
+}
+
+.copy-barcode-btn:hover {
+  opacity: 1;
+}
+
 /* ===== Shelf grid 3 columns ===== */
 .shelf-grid--three-col {
   grid-template-columns: repeat(3, 1fr);

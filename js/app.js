@@ -857,6 +857,16 @@ const app = Vue.createApp({
       }
     },
 
+    async copyProductBarcode(product) {
+      if (!product || !product.barcode) return;
+      try {
+        await navigator.clipboard.writeText(String(product.barcode));
+        this.showToast('ШК скопирован');
+      } catch {
+        this.showToast('Не удалось скопировать');
+      }
+    },
+
     async printAll() {
       vibrate();
       const shelves = this.printShelves;

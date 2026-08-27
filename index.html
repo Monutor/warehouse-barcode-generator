@@ -251,7 +251,7 @@
                 <div class="product-info-name">{{ product.name }}</div>
                 <div class="product-info-meta">
                   <span class="product-info-article">Арт. {{ product.article }}</span>
-                  <span class="product-info-barcode">ШК {{ product.barcode }}</span>
+                  <span class="product-info-barcode">ШК {{ product.barcode }} <button type="button" class="copy-barcode-btn" @click.stop="copyProductBarcode(product)" title="Копировать ШК">📋</button></span>
                 </div>
               </div>
               <span class="icons">▶</span>
@@ -451,7 +451,7 @@
                     <div class="product-info-name">{{ product.name }}</div>
                     <div class="product-info-meta">
                       <span class="product-info-article">Арт. {{ product.article }}</span>
-                      <span class="product-info-barcode">ШК {{ product.barcode }}</span>
+                      <span class="product-info-barcode">ШК {{ product.barcode }} <button type="button" class="copy-barcode-btn" @click.stop="copyProductBarcode(product)" title="Копировать ШК">📋</button></span>
                     </div>
                   </div>
                   <span class="icons">▶</span>

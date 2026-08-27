@@ -1,10 +1,15 @@
 // === Translit ===
 const TRANSLIT_MAP = {
-  'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E',
+  'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'YO',
   'Ж': 'ZH', 'З': 'Z', 'И': 'I', 'Й': 'Y', 'К': 'K', 'Л': 'L',
   'М': 'M', 'Н': 'N', 'О': 'O', 'П': 'P', 'Р': 'R', 'С': 'S',
   'Т': 'T', 'У': 'U', 'Ф': 'F', 'Х': 'KH', 'Ц': 'TS', 'Ч': 'CH',
-  'Ш': 'SH', 'Щ': 'SHCH', 'Ы': 'Y', 'Э': 'E', 'Ю': 'YU', 'Я': 'YA'
+  'Ш': 'SH', 'Щ': 'SHCH', 'Ы': 'Y', 'Э': 'E', 'Ю': 'YU', 'Я': 'YA',
+  'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo',
+  'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l',
+  'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's',
+  'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch',
+  'ш': 'sh', 'щ': 'shch', 'ы': 'y', 'э': 'e', 'ю': 'yu', 'я': 'ya'
 };
 
 function transliterate(text) {
@@ -222,6 +227,7 @@ class DataLayer {
   constructor() {
     this.shelves = [];
     this.nameIndex = new Map();
+    this.barcodeIndex = new Map();
     this.sectionIndex = new Map();
     this.searchItems = [];
     this.products = [];
@@ -240,35 +246,69 @@ class DataLayer {
     return data;
   }
 
-  async loadProducts() {
-    const resp = await fetch('https://raw.githubusercontent.com/Monutor/DataBaseProducts/main/db.json');
-    if (!resp.ok) return null;
-    const raw = await resp.json();
-    this.products = [];
-    for (const item of raw) {
+  _parseProducts(raw) {
+    const items = Array.isArray(raw) ? raw : (raw && raw.products) || [];
+    const products = [];
+    for (const item of items) {
       const article = String(item['Код товара'] || '').trim();
       const name = String(item['Наименование'] || '').trim();
       const barcode = String(item['ШК товара'] || '').trim();
       if (!article || !name || !barcode) continue;
-      this.products.push({ article, name, barcode });
+      products.push({ article, name, barcode });
     }
+    return products;
+  }
+
+  async loadProducts() {
+    let products = [];
+    let commitDate = null;
+
+    try {
+      const resp = await fetch('https://raw.githubusercontent.com/Monutor/DataBaseProducts/main/db.json');
+      if (resp.ok) {
+        products = this._parseProducts(await resp.json());
+        commitDate = await this._getCachedCommitDate();
+      }
+    } catch {}
+
+    if (!products.length) {
+      try {
+        const localResp = await fetch('data/products.json');
+        if (localResp.ok) {
+          const local = await localResp.json();
+          products = this._parseProducts(local);
+          if (!commitDate && local.updatedAt) commitDate = new Date(local.updatedAt);
+        }
+      } catch {}
+    }
+
+    this.products = products;
     this.productByArticle.clear();
     for (const p of this.products) {
       this.productByArticle.set(p.article, p);
     }
 
-    let commitDate = null;
+    return { version: Date.now(), updatedAt: commitDate ? commitDate.toISOString() : null };
+  }
+
+  async _getCachedCommitDate() {
+    const now = Date.now();
+    const cached = localStorage.getItem('githubCommitDate');
+    if (cached && now - new Date(cached).getTime() < 24 * 60 * 60 * 1000) {
+      return new Date(cached);
+    }
     try {
       const commitsResp = await fetch('https://api.github.com/repos/Monutor/DataBaseProducts/commits?per_page=1');
       if (commitsResp.ok) {
         const commits = await commitsResp.json();
         if (commits[0] && commits[0].commit.author.date) {
-          commitDate = new Date(commits[0].commit.author.date);
+          const d = new Date(commits[0].commit.author.date);
+          localStorage.setItem('githubCommitDate', d.toISOString());
+          return d;
         }
       }
     } catch {}
-
-    return { version: Date.now(), updatedAt: commitDate ? commitDate.toISOString() : null };
+    return null;
   }
 
   buildSearchIndex() {
@@ -286,6 +326,9 @@ class DataLayer {
 
     for (const shelf of this.shelves) {
       this.nameIndex.set(shelf.name, shelf);
+      if (!this.barcodeIndex.has(shelf.barcode)) {
+        this.barcodeIndex.set(shelf.barcode, shelf);
+      }
 
       if (!this.sectionIndex.has(shelf.section)) {
         this.sectionIndex.set(shelf.section, { racks: [], pallets: [], zones: [] });
@@ -324,12 +367,8 @@ class DataLayer {
   findByBarcode(code) {
     if (!code) return null;
     const normalized = code.trim();
-    for (const shelf of this.shelves) {
-      if (shelf.barcode === normalized) return shelf;
-    }
-    for (const shelf of this.shelves) {
-      if (shelf.name === normalized) return shelf;
-    }
+    if (normalized && this.barcodeIndex.has(normalized)) return this.barcodeIndex.get(normalized);
+    if (this.nameIndex.has(normalized)) return this.nameIndex.get(normalized);
     return null;
   }
 

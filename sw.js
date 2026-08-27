@@ -1,4 +1,4 @@
-const CACHE_NAME = 'barcode-app-v6';
+const CACHE_NAME = 'barcode-app-v7';
 const CDN_CACHE_NAME = 'barcode-cdn-v6';
 
 const ASSETS = [
@@ -6,7 +6,12 @@ const ASSETS = [
   '/warehouse-barcode-generator/css/style.css',
   '/warehouse-barcode-generator/js/app.js',
   '/warehouse-barcode-generator/data/shelves.json',
-  '/warehouse-barcode-generator/manifest.json'
+  '/warehouse-barcode-generator/data/products.json',
+  '/warehouse-barcode-generator/manifest.json',
+  '/warehouse-barcode-generator/icons/icon-192.png',
+  '/warehouse-barcode-generator/icons/icon-512.png',
+  '/warehouse-barcode-generator/icons/barcode-icon.svg',
+  '/warehouse-barcode-generator/icons/barcode-tag-icon.svg'
 ];
 
 const CDN_ASSETS = [

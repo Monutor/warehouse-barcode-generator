@@ -1,4 +1,5 @@
 import csv
+import glob
 import json
 import os
 from datetime import datetime, timezone
@@ -105,6 +106,14 @@ def convert_products_to_json(csv_path, json_path):
     print(f'Converted {len(products)} products to {json_path}')
     print(f'Version: {version} | Updated: {updated_at}')
 
+def find_input(pattern):
+    matches = glob.glob(os.path.join(os.getcwd(), pattern))
+    if not matches:
+        raise SystemExit(
+            f'Файл не найден по шаблону {pattern!r} (запускайте из корня репозитория: {os.getcwd()})'
+        )
+    return max(matches, key=os.path.getmtime)
+
 if __name__ == '__main__':
     script_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(script_dir)
@@ -113,6 +122,6 @@ if __name__ == '__main__':
         os.path.join(root_dir, 'data', 'shelves.json')
     )
     convert_products_to_json(
-        os.path.join(root_dir, 'Остатки S187 2026-07-05_00-11-43.csv'),
+        find_input('Остатки S187 *.csv'),
         os.path.join(root_dir, 'data', 'products.json')
     )

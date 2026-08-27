@@ -849,11 +849,33 @@ const app = Vue.createApp({
 
     async copyBarcode() {
       if (!this.currentBarcodeShelf || !this.currentBarcodeShelf.barcode) return;
+      const text = this.currentBarcodeShelf.barcode;
       try {
-        await navigator.clipboard.writeText(this.currentBarcodeShelf.barcode);
-        this.showToast('Код скопирован');
+        await navigator.clipboard.writeText(text);
       } catch {
-        this.showToast('Не удалось скопировать');
+        if (!this._legacyCopy(text)) {
+          this.showToast('Не удалось скопировать');
+          return;
+        }
+      }
+      this.showToast('Код скопирован');
+    },
+
+    _legacyCopy(text) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.top = '-1000px';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch {
+        return false;
       }
     },
 

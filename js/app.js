@@ -889,6 +889,16 @@ const app = Vue.createApp({
       }
     },
 
+    async copyProductArticle(product) {
+      if (!product || !product.article) return;
+      try {
+        await navigator.clipboard.writeText(String(product.article));
+        this.showToast('Артикул скопирован');
+      } catch {
+        this.showToast('Не удалось скопировать');
+      }
+    },
+
     async printAll() {
       vibrate();
       const shelves = this.printShelves;

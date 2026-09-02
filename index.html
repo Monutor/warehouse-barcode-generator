@@ -250,7 +250,7 @@
               <div class="product-info">
                 <div class="product-info-name">{{ product.name }}</div>
                 <div class="product-info-meta">
-                  <span class="product-info-article">Арт. {{ product.article }}</span>
+                  <span class="product-info-article">Арт. {{ product.article }} <button type="button" class="copy-barcode-btn" @click.stop="copyProductArticle(product)" title="Копировать артикул">📋</button></span>
                   <span class="product-info-barcode">ШК {{ product.barcode }} <button type="button" class="copy-barcode-btn" @click.stop="copyProductBarcode(product)" title="Копировать ШК">📋</button></span>
                 </div>
               </div>
@@ -415,7 +415,7 @@
       <div class="barcode-modal-dialog" :class="{'barcode-modal-dialog--split': productPanelOpen}">
         <div class="barcode-modal-header">
           <div class="barcode-modal-header-left">
-            <span class="barcode-modal-title" v-if="barcodeMode === 'product'">{{ currentBarcodeShelf?.name }} <small class="text-muted">(Арт. {{ currentBarcodeShelf?.article }})</small></span>
+            <span class="barcode-modal-title" v-if="barcodeMode === 'product'">{{ currentBarcodeShelf?.name }} <small class="text-muted">(Арт. {{ currentBarcodeShelf?.article }} <button type="button" class="copy-barcode-btn" @click.stop="copyProductArticle(currentBarcodeShelf)" title="Копировать артикул">📋</button>)</small></span>
             <span class="barcode-modal-title" v-else>{{ currentBarcodeShelf?.name || '' }}</span>
           </div>
           <button v-if="!productPanelOpen" type="button" class="btn btn-sm btn-outline-primary barcode-header-toggle" @click="openProductPanel">ШК товара → </button>
@@ -450,7 +450,7 @@
                   <div class="product-info">
                     <div class="product-info-name">{{ product.name }}</div>
                     <div class="product-info-meta">
-                      <span class="product-info-article">Арт. {{ product.article }}</span>
+                      <span class="product-info-article">Арт. {{ product.article }} <button type="button" class="copy-barcode-btn" @click.stop="copyProductArticle(product)" title="Копировать артикул">📋</button></span>
                       <span class="product-info-barcode">ШК {{ product.barcode }} <button type="button" class="copy-barcode-btn" @click.stop="copyProductBarcode(product)" title="Копировать ШК">📋</button></span>
                     </div>
                   </div>
@@ -478,7 +478,7 @@
             <button type="button" class="btn btn-outline-primary" :class="{'active': downloadFormat === 'png'}" @click="downloadFormat = 'png'">PNG</button>
             <button type="button" class="btn btn-outline-primary" :class="{'active': downloadFormat === 'jpg'}" @click="downloadFormat = 'jpg'">JPG</button>
           </div>
-          <button type="button" class="btn btn-outline-secondary barcode-btn-copy" @click="copyBarcode">📋 Копировать код</button>
+          <button type="button" class="btn btn-outline-secondary barcode-btn-copy" @click="copyBarcode">📋 Копировать ШК</button>
           <button type="button" class="btn btn-outline-primary barcode-btn-download" @click="downloadBarcode">⬇ Скачать</button>
           <button type="button" class="btn btn-primary barcode-btn-print" @click="printOne(currentBarcodeShelf)">🖨 Печать</button>
           <button type="button" class="btn btn-outline-secondary" @click="rescanQr" v-if="barcodeMode === 'product'">📷 Ещё QR</button>

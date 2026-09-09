@@ -16,9 +16,23 @@ function transliterate(text) {
   return text.split('').map(ch => TRANSLIT_MAP[ch] || ch).join('');
 }
 
+// P1-5: имена товаров содержат / : " | и т.п. — чистим для имени файла
+function sanitizeFilename(name) {
+  return String(name || '')
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 100);
+}
+
 // === BarcodeCache (IndexedDB) ===
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 дней
 const CACHE_MAX_ENTRIES = 100;
+
+// Печать: 12 этикеток на странице A4, максимум 10 страниц за раз —
+// большие очереди вешают вкладку (синхронный рендер сотен SVG).
+const PRINT_LABELS_PER_PAGE = 12;
+const PRINT_MAX_LABELS = 120;
 
 class BarcodeCache {
   constructor() {
@@ -59,7 +73,14 @@ class BarcodeCache {
       return undefined;
     }
     entry.timestamp = Date.now();
-    await this.put(key, entry);
+    // Пишем обновлённую запись напрямую, минуя put():
+    // put(key, value) ожидает строку PNG, а не объект.
+    await new Promise((resolve, reject) => {
+      const tx = this.db.transaction('barcodes', 'readwrite');
+      tx.objectStore('barcodes').put(entry, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
     return entry.pngDataUrl;
   }
 
@@ -142,7 +163,10 @@ class BarcodeGenerator {
     }
 
     const svgString = new XMLSerializer().serializeToString(svg);
-    const cachedPng = await this.cache.get(barcode);
+    // P1-2: ключ кэша включает отображаемый текст — один ШК может
+    // соответствовать разным названиям (дубли ШК в products.json)
+    const cacheKey = JSON.stringify([barcode, shelfName]);
+    const cachedPng = await this.cache.get(cacheKey);
 
     const canvas = document.createElement('canvas');
     const img = new Image();
@@ -163,7 +187,7 @@ class BarcodeGenerator {
           resolve({ svg: svgString, pngDataUrl: cachedPng, jpgDataUrl });
         } else {
           const pngDataUrl = canvas.toDataURL('image/png');
-          this.cache.put(barcode, pngDataUrl).catch(() => {});
+          this.cache.put(cacheKey, pngDataUrl).catch(() => {});
           resolve({ svg: svgString, pngDataUrl, jpgDataUrl });
         }
       };
@@ -232,6 +256,8 @@ class DataLayer {
     this.searchItems = [];
     this.products = [];
     this.productByArticle = new Map();
+    this.productByBarcode = new Map();
+    this.productNameIndex = [];
   }
 
   async load() {
@@ -250,9 +276,11 @@ class DataLayer {
     const items = Array.isArray(raw) ? raw : (raw && raw.products) || [];
     const products = [];
     for (const item of items) {
-      const article = String(item['Код товара'] || '').trim();
-      const name = String(item['Наименование'] || '').trim();
-      const barcode = String(item['ШК товара'] || '').trim();
+      // Два формата: локальный data/products.json (article/name/barcode)
+      // и удалённый db.json (русские ключи «Код товара» и т.д.)
+      const article = String(item['article'] ?? item['Код товара'] ?? '').trim();
+      const name = String(item['name'] ?? item['Наименование'] ?? '').trim();
+      const barcode = String(item['barcode'] ?? item['ШК товара'] ?? '').trim();
       if (!article || !name || !barcode) continue;
       products.push({ article, name, barcode });
     }
@@ -262,11 +290,15 @@ class DataLayer {
   async loadProducts() {
     let products = [];
     let commitDate = null;
+    // P1-3: берём реальную версию из данных, а не Date.now()
+    let version = null;
 
     try {
       const resp = await fetch('https://raw.githubusercontent.com/Monutor/DataBaseProducts/main/db.json');
       if (resp.ok) {
-        products = this._parseProducts(await resp.json());
+        const remote = await resp.json();
+        products = this._parseProducts(remote);
+        if (remote && remote.version != null) version = remote.version;
         commitDate = await this._getCachedCommitDate();
       }
     } catch {}
@@ -277,6 +309,7 @@ class DataLayer {
         if (localResp.ok) {
           const local = await localResp.json();
           products = this._parseProducts(local);
+          if (version == null && local && local.version != null) version = local.version;
           if (!commitDate && local.updatedAt) commitDate = new Date(local.updatedAt);
         }
       } catch {}
@@ -284,11 +317,21 @@ class DataLayer {
 
     this.products = products;
     this.productByArticle.clear();
+    this.productByBarcode.clear();
+    this.productNameIndex = [];
     for (const p of this.products) {
       this.productByArticle.set(p.article, p);
+      // ШК почти уникален (1 дубль на 15К) — первым выигрывает
+      if (p.barcode && !this.productByBarcode.has(p.barcode.trim())) {
+        this.productByBarcode.set(p.barcode.trim(), p);
+      }
+      this.productNameIndex.push({ p, nameLower: (p.name || '').toLowerCase() });
     }
 
-    return { version: Date.now(), updatedAt: commitDate ? commitDate.toISOString() : null };
+    return {
+      version: version != null ? version : (commitDate ? commitDate.getTime() : Date.now()),
+      updatedAt: commitDate ? commitDate.toISOString() : null
+    };
   }
 
   async _getCachedCommitDate() {
@@ -322,10 +365,15 @@ class DataLayer {
 
   buildIndexes() {
     this.nameIndex.clear();
+    this.barcodeIndex.clear();
     this.sectionIndex.clear();
 
     for (const shelf of this.shelves) {
-      this.nameIndex.set(shelf.name, shelf);
+      // Имена не уникальны (есть дубли с разными ШК) — первым выигрывает.
+      // Канонический идентификатор полки — barcode (уникален).
+      if (!this.nameIndex.has(shelf.name)) {
+        this.nameIndex.set(shelf.name, shelf);
+      }
       if (!this.barcodeIndex.has(shelf.barcode)) {
         this.barcodeIndex.set(shelf.barcode, shelf);
       }
@@ -393,24 +441,54 @@ class DataLayer {
   }
 }
 
-function findProduct(query) {
-  if (typeof query !== 'string') return null;
-  const p = dataLayer?.productByArticle?.get(query);
-  if (p) return p;
-  const products = dataLayer?.products || [];
-  for (const prod of products) {
-    if (prod.barcode && prod.barcode.trim() === query) return prod;
-  }
-  if (query.length >= 4 && /^\d+$/.test(query)) {
-    for (const prod of products) {
-      if (prod.barcode && prod.barcode.trim().endsWith(query)) return prod;
+const PRODUCT_SEARCH_LIMIT = 50;
+
+// Поиск товаров: точное совпадение (артикул/ШК) — сразу.
+// Числовые запросы ищутся только по числам (суффикс ШК, подстрока
+// артикула) и никогда — по именам: иначе «40» находит 50 строк вида
+// «J40», «WS-40», «400 DUAL». Текстовые — по подстроке в названии.
+function findProducts(query, limit = PRODUCT_SEARCH_LIMIT) {
+  if (typeof query !== 'string') return [];
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const byArticle = dataLayer?.productByArticle?.get(q);
+  if (byArticle) return [byArticle];
+  const byBarcode = dataLayer?.productByBarcode?.get(q);
+  if (byBarcode) return [byBarcode];
+  const results = [];
+  const seen = new Set();
+  const push = (prod) => {
+    if (prod && !seen.has(prod.article)) {
+      seen.add(prod.article);
+      results.push(prod);
     }
+  };
+  if (/^\d+$/.test(q)) {
+    if (q.length >= 4) {
+      for (const prod of (dataLayer?.products || [])) {
+        if (results.length >= limit) break;
+        if (prod.barcode && prod.barcode.trim().endsWith(q)) push(prod);
+      }
+    }
+    if (q.length >= 3) {
+      for (const prod of (dataLayer?.products || [])) {
+        if (results.length >= limit) break;
+        if (prod.article && prod.article.includes(q)) push(prod);
+      }
+    }
+    return results;
   }
-  const lower = query.toLowerCase();
-  for (const prod of products) {
-    if (prod.name && prod.name.toLowerCase().includes(lower)) return prod;
+  const lower = q.toLowerCase();
+  for (const entry of (dataLayer?.productNameIndex || [])) {
+    if (results.length >= limit) break;
+    if (entry.nameLower.includes(lower)) push(entry.p);
   }
-  return null;
+  return results;
+}
+
+function findProduct(query) {
+  const list = findProducts(query, 1);
+  return list.length > 0 ? list[0] : null;
 }
 
 // === Vue App ===
@@ -430,6 +508,8 @@ const app = Vue.createApp({
       barcodeSvg: '',
       barcodePng: null,
       barcodeJpg: null,
+      // P1-5: фактически закодированное значение (может быть транслитом)
+      barcodeValue: '',
       downloadFormat: 'png',
       barcodeError: null,
       barcodeLoading: false,
@@ -455,10 +535,14 @@ const app = Vue.createApp({
       barcodeMode: 'shelf',
       productSearchOpen: false,
       productSearchArticle: '',
+      productSearchQuery: '',
       productPanelOpen: false,
       productPanelBarcodeSvg: '',
       productPanelBarcodePng: null,
       productPanelBarcodeJpg: null,
+      // P1-5: выбранный в панели товар и его фактический ШК (для скачивания)
+      productPanelProduct: null,
+      productPanelBarcodeValue: '',
        productPanelBarcodeLoading: false,
        productPanelBarcodeError: null,
         qrScannerOpen: false,
@@ -472,6 +556,10 @@ const app = Vue.createApp({
         qrAllCameras: [],
         qrTorchOn: false,
         qrZoomLevel: 1.0,
+        // P1-4: реальный диапазон зума камеры (из getCapabilities)
+        qrZoomMin: 1,
+        qrZoomMax: 3,
+        qrZoomStep: 0.1,
         _qrVideoTrack: null,
         qrZoomSupported: false,
       mvideoViewOpen: false,
@@ -558,7 +646,7 @@ const app = Vue.createApp({
     favoriteShelves() {
       const set = this.favoriteSet;
       if (set.size === 0) return [];
-      return dataLayer.shelves.filter(s => set.has(s.name));
+      return dataLayer.shelves.filter(s => set.has(s.barcode));
     },
 
     printCount() {
@@ -568,26 +656,30 @@ const app = Vue.createApp({
     printShelves() {
       const set = this.printQueueSet;
       if (set.size === 0) return [];
-      return dataLayer.shelves.filter(s => set.has(s.name));
+      return dataLayer.shelves.filter(s => set.has(s.barcode));
     },
 
     foundProducts() {
-      const q = this.productSearchArticle.trim();
+      const q = this.productSearchQuery.trim();
       if (!q) return [];
       const queries = q.split(',').map(s => s.trim()).filter(Boolean);
       const results = [];
-      const seen = new Set();
+      const seenQueries = new Set();
+      const seenArticles = new Set();
       for (const query of queries) {
-        if (seen.has(query)) continue;
-        seen.add(query);
-        const product = findProduct(query);
-        if (product) results.push(product);
+        if (seenQueries.has(query)) continue;
+        seenQueries.add(query);
+        for (const product of findProducts(query, PRODUCT_SEARCH_LIMIT)) {
+          if (seenArticles.has(product.article)) continue;
+          seenArticles.add(product.article);
+          results.push(product);
+        }
       }
       return results;
     },
 
     notFoundArticles() {
-      const q = this.productSearchArticle.trim();
+      const q = this.productSearchQuery.trim();
       if (!q) return [];
       const queries = q.split(',').map(s => s.trim()).filter(Boolean);
       return queries.filter(a => !findProduct(a));
@@ -633,9 +725,27 @@ const app = Vue.createApp({
     },
   },
 
+  watch: {
+    // Поиск по 15К товаров на каждое нажатие вешает UI —
+    // тяжёлые computed работают с дебаунснутым значением (250мс)
+    productSearchArticle(val) {
+      this.debouncedProductSearch(val);
+    },
+    // Пока открыта любая модалка — страница под ней не скроллится
+    barcodeModalOpen() {
+      this._lockBodyScroll();
+    },
+    qrScannerOpen() {
+      this._lockBodyScroll();
+    },
+  },
+
   created() {
     this.debouncedSearch = debounce((val) => {
       this.searchQuery = val;
+    }, 250);
+    this.debouncedProductSearch = debounce((val) => {
+      this.productSearchQuery = val;
     }, 250);
   },
 
@@ -684,7 +794,6 @@ const app = Vue.createApp({
       this.enteredSection = name;
       this.activeSection = null;
       this.selectedShelfLevels = null;
-      localStorage.setItem('lastSection', name);
     },
 
     backFromSection() {
@@ -731,6 +840,7 @@ const app = Vue.createApp({
           barcode = transliterate(text);
         }
         const result = await barcodeGenerator.generate(barcode, text);
+        this.barcodeValue = barcode;
         this.barcodeSvg = result.svg;
         this.barcodePng = result.pngDataUrl;
         this.barcodeJpg = result.jpgDataUrl;
@@ -747,6 +857,7 @@ const app = Vue.createApp({
       this.barcodeSvg = '';
       this.barcodePng = null;
       this.barcodeJpg = null;
+      this.barcodeValue = '';
       this.barcodeLoading = true;
       this.barcodeModalOpen = true;
       this.productPanelOpen = false;
@@ -761,6 +872,7 @@ const app = Vue.createApp({
       vibrate();
       this.productSearchOpen = true;
       this.productSearchArticle = '';
+      this.productSearchQuery = '';
       this.enteredSection = null;
       this.selectedShelfLevels = null;
       this.activeSection = null;
@@ -769,21 +881,26 @@ const app = Vue.createApp({
     closeProductSearch() {
       this.productSearchOpen = false;
       this.productSearchArticle = '';
+      this.productSearchQuery = '';
     },
 
     openProductPanel() {
       vibrate();
       this.productPanelOpen = true;
       this.productSearchArticle = '';
+      this.productSearchQuery = '';
       this.productPanelBarcodeSvg = '';
       this.productPanelBarcodePng = null;
       this.productPanelBarcodeJpg = null;
+      this.productPanelProduct = null;
+      this.productPanelBarcodeValue = '';
       this.productPanelBarcodeError = null;
     },
 
     closeProductPanel() {
       this.productPanelOpen = false;
       this.productSearchArticle = '';
+      this.productSearchQuery = '';
     },
 
     async selectProductInPanel(product) {
@@ -792,11 +909,14 @@ const app = Vue.createApp({
       this.productPanelBarcodeSvg = '';
       this.productPanelBarcodePng = null;
       this.productPanelBarcodeJpg = null;
+      this.productPanelProduct = product;
+      this.productPanelBarcodeValue = '';
       this.productPanelBarcodeLoading = true;
       try {
         const barcode = product.barcode || transliterate(product.name);
         const text = product.name + ' | ' + product.article;
         const result = await barcodeGenerator.generate(barcode, text);
+        this.productPanelBarcodeValue = barcode;
         this.productPanelBarcodeSvg = result.svg;
         this.productPanelBarcodePng = result.pngDataUrl;
         this.productPanelBarcodeJpg = result.jpgDataUrl;
@@ -815,6 +935,7 @@ const app = Vue.createApp({
       this.barcodeSvg = '';
       this.barcodePng = null;
       this.barcodeJpg = null;
+      this.barcodeValue = '';
       this.barcodeLoading = true;
       this.barcodeModalOpen = true;
       try {
@@ -829,6 +950,12 @@ const app = Vue.createApp({
       this.barcodeMode = 'shelf';
       this.productPanelOpen = false;
       this.productSearchArticle = '';
+      this.productSearchQuery = '';
+    },
+
+    _lockBodyScroll() {
+      const locked = this.barcodeModalOpen || this.qrScannerOpen;
+      document.body.classList.toggle('modal-open', locked);
     },
 
     rescanQr() {
@@ -839,21 +966,35 @@ const app = Vue.createApp({
     },
 
     downloadBarcode() {
-      const dataUrl = this.downloadFormat === 'jpg' ? this.barcodeJpg : this.barcodePng;
+      // P1-5: при открытой панели скачиваем ШК панели, а не полки;
+      // имя файла чистим от запрещённых символов
+      const usePanel = this.productPanelOpen && (this.productPanelBarcodePng || this.productPanelBarcodeJpg);
+      const dataUrl = this.downloadFormat === 'jpg'
+        ? (usePanel ? this.productPanelBarcodeJpg : this.barcodeJpg)
+        : (usePanel ? this.productPanelBarcodePng : this.barcodePng);
       if (!dataUrl) return;
+      const src = usePanel ? this.productPanelProduct : this.currentBarcodeShelf;
+      const fallback = usePanel ? this.productPanelBarcodeValue : this.barcodeValue;
+      const base = sanitizeFilename(src && src.name) || String(fallback || 'barcode');
       const link = document.createElement('a');
-      link.download = this.currentBarcodeShelf.name + '.' + this.downloadFormat;
+      link.download = base + '.' + this.downloadFormat;
       link.href = dataUrl;
       link.click();
     },
 
     async copyBarcode() {
-      if (!this.currentBarcodeShelf || !this.currentBarcodeShelf.barcode) return;
-      const text = this.currentBarcodeShelf.barcode;
+      // P1-5: копируем фактически закодированное значение (учитывает транслит
+      // и ШК открытой панели), а не поле item.barcode
+      let text = this.barcodeValue;
+      if (this.productPanelOpen && this.productPanelBarcodeValue) {
+        text = this.productPanelBarcodeValue;
+      }
+      if (!text && this.currentBarcodeShelf) text = this.currentBarcodeShelf.barcode;
+      if (!text) return;
       try {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(String(text));
       } catch {
-        if (!this._legacyCopy(text)) {
+        if (!this._legacyCopy(String(text))) {
           this.showToast('Не удалось скопировать');
           return;
         }
@@ -880,23 +1021,40 @@ const app = Vue.createApp({
     },
 
     async copyProductBarcode(product) {
-      if (!product || !product.barcode) return;
+      if (!product) return;
+      // P1-5: тот же фолбэк, что при генерации, — копируем реальное значение
+      const text = String(product.barcode || transliterate(product.name) || '');
+      if (!text) return;
       try {
-        await navigator.clipboard.writeText(String(product.barcode));
+        await navigator.clipboard.writeText(text);
         this.showToast('ШК скопирован');
       } catch {
-        this.showToast('Не удалось скопировать');
+        if (!this._legacyCopy(text)) {
+          this.showToast('Не удалось скопировать');
+        } else {
+          this.showToast('ШК скопирован');
+        }
       }
     },
 
     async copyProductArticle(product) {
       if (!product || !product.article) return;
+      const text = String(product.article);
       try {
-        await navigator.clipboard.writeText(String(product.article));
-        this.showToast('Артикул скопирован');
+        await navigator.clipboard.writeText(text);
       } catch {
-        this.showToast('Не удалось скопировать');
+        if (!this._legacyCopy(text)) {
+          this.showToast('Не удалось скопировать');
+          return;
+        }
       }
+      this.showToast('Артикул скопирован');
+    },
+
+    copyCurrentArticle() {
+      // Кнопка в футере модалки товара: currentBarcodeShelf там — сам продукт
+      if (this.barcodeMode !== 'product') return Promise.resolve();
+      return this.copyProductArticle(this.currentBarcodeShelf);
     },
 
     async printAll() {
@@ -929,30 +1087,42 @@ const app = Vue.createApp({
 
     async renderPrintPages(items, getText) {
       const printArea = document.getElementById('print-area');
-      if (!printArea) return;
+      if (!printArea || items.length === 0) return;
+      let list = items;
+      if (items.length > PRINT_MAX_LABELS) {
+        this.showToast('Много этикеток: печатаем первые ' + PRINT_MAX_LABELS + ' из ' + items.length);
+        list = items.slice(0, PRINT_MAX_LABELS);
+      }
       printArea.innerHTML = '';
       let html = '<div class="print-page">';
       let idx = 0;
-      const perPage = 12;
-      for (const item of items) {
+      for (const item of list) {
         try {
           const text = getText ? getText(item) : item.name;
-          let barcode = item.barcode || transliterate(text);
+          const barcode = item.barcode || transliterate(text);
           const result = await barcodeGenerator.generate(barcode, text);
           html += '<div class="print-label">' + result.svg + '</div>';
           idx++;
-          if (idx % perPage === 0 && idx < items.length) {
+          if (idx % PRINT_LABELS_PER_PAGE === 0 && idx < list.length) {
             html += '</div><div class="print-page">';
+            this.showToast('Генерация штрихов: ' + idx + ' / ' + list.length);
+            // Даём UI обновить тост прогресса между страницами
+            await new Promise(r => setTimeout(r, 0));
           }
         } catch (e) {
           // skip individual errors
         }
       }
       html += '</div>';
+      if (idx === 0) {
+        this.showToast('Не удалось сгенерировать ни одного штрих-кода');
+        return;
+      }
       printArea.innerHTML = html;
       await new Promise(r => setTimeout(r, 200));
       window.print();
-      printArea.innerHTML = '';
+      // НЕ чистим здесь: window.print() асинхронен в мобильных браузерах,
+      // синхронная очистка даёт пустые страницы. Очистка — по afterprint (см. mounted).
     },
 
     showToast(message) {
@@ -977,8 +1147,10 @@ const app = Vue.createApp({
         this.stats = dataLayer.getStats();
         this.dataVersion = productData?.version || shelfData.version || '';
         this.dataUpdatedAt = productData?.updatedAt || shelfData.updatedAt || '';
-        this.favorites = loadFavorites();
-        this.printQueue = loadPrintQueue();
+        this.favorites = this.migrateShelfKeys(loadFavorites());
+        this.printQueue = this.migrateShelfKeys(loadPrintQueue());
+        saveFavorites(this.favorites);
+        savePrintQueue(this.printQueue);
         this.loading = false;
       } catch (e) {
         this.loading = false;
@@ -992,8 +1164,29 @@ const app = Vue.createApp({
       }
     },
 
-    isFavorite(name) {
-      return this.favoriteSet.has(name);
+    // Избранное/очередь хранятся по barcode (уникален).
+    // Старые записи по имени мигрируют в barcode, неизвестные отбрасываются.
+    migrateShelfKeys(keys) {
+      const out = [];
+      const seen = new Set();
+      for (const key of keys) {
+        let barcode = null;
+        if (dataLayer.barcodeIndex.has(key)) {
+          barcode = key;
+        } else {
+          const shelf = dataLayer.findShelf(key);
+          if (shelf) barcode = shelf.barcode;
+        }
+        if (barcode && !seen.has(barcode)) {
+          seen.add(barcode);
+          out.push(barcode);
+        }
+      }
+      return out;
+    },
+
+    isFavorite(barcode) {
+      return this.favoriteSet.has(barcode);
     },
 
     toggleInstructions() {
@@ -1004,24 +1197,24 @@ const app = Vue.createApp({
       this.statsOpen = !this.statsOpen;
     },
 
-    toggleFavorite(name) {
-      const idx = this.favorites.indexOf(name);
+    toggleFavorite(barcode) {
+      const idx = this.favorites.indexOf(barcode);
       if (idx === -1) {
-        this.favorites.push(name);
+        this.favorites.push(barcode);
       } else {
         this.favorites.splice(idx, 1);
       }
       saveFavorites(this.favorites);
     },
 
-    isInPrintQueue(name) {
-      return this.printQueueSet.has(name);
+    isInPrintQueue(barcode) {
+      return this.printQueueSet.has(barcode);
     },
 
-    togglePrintQueue(name) {
-      const idx = this.printQueue.indexOf(name);
+    togglePrintQueue(barcode) {
+      const idx = this.printQueue.indexOf(barcode);
       if (idx === -1) {
-        this.printQueue.push(name);
+        this.printQueue.push(barcode);
       } else {
         this.printQueue.splice(idx, 1);
       }
@@ -1061,16 +1254,16 @@ const app = Vue.createApp({
       savePrintQueue(this.printQueue);
     },
 
-    removeFromPrintQueue(name) {
-      const idx = this.printQueue.indexOf(name);
+    removeFromPrintQueue(barcode) {
+      const idx = this.printQueue.indexOf(barcode);
       if (idx !== -1) {
         this.printQueue.splice(idx, 1);
         savePrintQueue(this.printQueue);
       }
     },
 
-    removeFromFavorites(name) {
-      const idx = this.favorites.indexOf(name);
+    removeFromFavorites(barcode) {
+      const idx = this.favorites.indexOf(barcode);
       if (idx !== -1) {
         this.favorites.splice(idx, 1);
         saveFavorites(this.favorites);
@@ -1092,12 +1285,19 @@ const app = Vue.createApp({
     },
 
     async _stopScanning() {
+      // P1-4: останавливаем треки, иначе камера (и фонарик) остаются включены
       if (this._cam2qrScanner) {
-        this._cam2qrScanner.destroy();
+        try { this._cam2qrScanner.destroy(); } catch {}
         this._cam2qrScanner = null;
       }
       const video = document.getElementById('qr-video');
-      if (video) video.srcObject = null;
+      if (video && video.srcObject) {
+        for (const track of video.srcObject.getTracks()) {
+          try { track.stop(); } catch {}
+        }
+        video.srcObject = null;
+      }
+      this._qrVideoTrack = null;
     },
 
     openQrScanner() {
@@ -1112,6 +1312,9 @@ const app = Vue.createApp({
        this.qrAllCameras = [];
        this.qrZoomLevel = 1.0;
        this.qrZoomSupported = false;
+       this.qrZoomMin = 1;
+       this.qrZoomMax = 3;
+       this.qrZoomStep = 0.1;
        this.$nextTick(() => { this._initScanner(); });
     },
 
@@ -1166,27 +1369,27 @@ const app = Vue.createApp({
       try {
         const supported = await this._cam2qrScanner.setTorch(newState);
         if (supported === false) {
-          this.qrScanError = 'Фонарик не поддерживается этой камерой.';
-          this.qrScannerState = 'error';
+          // P1-4: не роняем сканер — просто тост, сканирование продолжается
+          this.showToast('Фонарик не поддерживается этой камерой.');
           return;
         }
         this.qrTorchOn = newState;
       } catch (e) {
-        this.qrScanError = 'Не удалось включить фонарик. Возможно, камера не поддерживает его.';
-        this.qrScannerState = 'error';
+        this.showToast('Не удалось включить фонарик. Возможно, камера не поддерживает его.');
       }
     },
 
     async setQrZoom(value) {
-      this.qrZoomLevel = parseFloat(value);
+      // P1-4: клампим к реальному диапазону камеры, ошибку показываем тостом
+      const v = Math.min(this.qrZoomMax, Math.max(this.qrZoomMin, parseFloat(value)));
+      this.qrZoomLevel = v;
       if (this._qrVideoTrack && this.qrZoomSupported) {
         try {
           await this._qrVideoTrack.applyConstraints({
-            advanced: [{ zoom: this.qrZoomLevel }]
+            advanced: [{ zoom: v }]
           });
         } catch (e) {
-          this.qrScanError = 'Не удалось применить зум. Ваша камера может не поддерживать эту функцию.';
-          this.qrScannerState = 'error';
+          this.showToast('Не удалось применить зум. Ваша камера может не поддерживать эту функцию.');
         }
       }
     },
@@ -1237,7 +1440,16 @@ const app = Vue.createApp({
             this._qrVideoTrack = tracks[0];
             try {
               const capabilities = this._qrVideoTrack.getCapabilities();
-              this.qrZoomSupported = !!capabilities.zoom;
+              if (capabilities.zoom) {
+                // P1-4: диапазон слайдера — из возможностей камеры, а не хардкод
+                this.qrZoomSupported = true;
+                this.qrZoomMin = capabilities.zoom.min ?? 1;
+                this.qrZoomMax = capabilities.zoom.max ?? 3;
+                this.qrZoomStep = capabilities.zoom.step ?? 0.1;
+                this.qrZoomLevel = Math.min(this.qrZoomMax, Math.max(this.qrZoomMin, this.qrZoomLevel || this.qrZoomMin));
+              } else {
+                this.qrZoomSupported = false;
+              }
             } catch (e) {
               this.qrZoomSupported = false;
             }
@@ -1334,6 +1546,9 @@ const app = Vue.createApp({
       this.qrTorchOn = false;
       this.qrZoomLevel = 1.0;
       this.qrZoomSupported = false;
+      this.qrZoomMin = 1;
+      this.qrZoomMax = 3;
+      this.qrZoomStep = 0.1;
     },
 
     openMvideoSearch() {
@@ -1384,17 +1599,20 @@ const app = Vue.createApp({
     this.initTheme();
     await this.init();
 
-    // Restore last section unless navigating to favorites/print
-    const hash = window.location.hash;
-    if (!hash || hash === '#') {
-      const lastSection = localStorage.getItem('lastSection');
-      if (lastSection && dataLayer.getSection(lastSection)) {
-        this.enteredSection = lastSection;
-      }
-    }
+    // Стартуем всегда с главной: автовосстановление последней секции
+    // убрано — после перезагрузки пользователь должен видеть все кнопки.
+    // Хэш-навигация (#print, #favorites) обрабатывается ниже как раньше.
 
     window.addEventListener('online', () => { this.isOffline = false; });
     window.addEventListener('offline', () => { this.isOffline = true; });
+
+    // Очистка области печати после закрытия диалога печати.
+    // Чистить синхронно после window.print() нельзя: в мобильных
+    // браузерах печать асинхронна и получаются пустые страницы.
+    window.addEventListener('afterprint', () => {
+      const printArea = document.getElementById('print-area');
+      if (printArea) printArea.innerHTML = '';
+    });
 
     // Close modals on Escape key
     document.addEventListener('keydown', (e) => {

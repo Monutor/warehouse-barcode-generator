@@ -1,17 +1,19 @@
-const CACHE_NAME = 'barcode-app-v7';
+const CACHE_NAME = 'barcode-app-v15';
 const CDN_CACHE_NAME = 'barcode-cdn-v6';
 
+// P1-6: относительные пути — работают и под /warehouse-barcode-generator/,
+// и на localhost, и на кастомном домене (резолвятся от URL самого sw.js)
 const ASSETS = [
-  '/warehouse-barcode-generator/index.html',
-  '/warehouse-barcode-generator/css/style.css',
-  '/warehouse-barcode-generator/js/app.js',
-  '/warehouse-barcode-generator/data/shelves.json',
-  '/warehouse-barcode-generator/data/products.json',
-  '/warehouse-barcode-generator/manifest.json',
-  '/warehouse-barcode-generator/icons/icon-192.png',
-  '/warehouse-barcode-generator/icons/icon-512.png',
-  '/warehouse-barcode-generator/icons/barcode-icon.svg',
-  '/warehouse-barcode-generator/icons/barcode-tag-icon.svg'
+  'index.html',
+  'css/style.css',
+  'js/app.js',
+  'data/shelves.json',
+  'data/products.json',
+  'manifest.json',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+  'icons/barcode-icon.svg',
+  'icons/barcode-tag-icon.svg'
 ];
 
 const CDN_ASSETS = [
@@ -52,11 +54,16 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // P1-6: кэшируем только GET — match/put с POST падают
+  if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin.includes('cdn.jsdelivr.net')) {
+    // P1-6: stale-while-revalidate вместо cache-first-навсегда:
+    // мгновенный ответ из кэша + тихое обновление в фоне.
+    // Попутно кэшируются и саб-импорты cam2qr при первом онлайне.
     event.respondWith(
-      caches.match(event.request).then((response) => {
-          return response || fetch(event.request).then((networkResponse) => {
+      caches.match(event.request).then((cached) => {
+        const network = fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.ok) {
             const responseToCache = networkResponse.clone();
             caches.open(CDN_CACHE_NAME).then((cache) => {
@@ -64,8 +71,20 @@ self.addEventListener('fetch', (event) => {
             }).catch(() => {});
           }
           return networkResponse;
-        }).catch(() => caches.match(event.request));
+        }).catch(() => cached);
+        return cached || network;
       })
+    );
+  } else if (event.request.mode === 'navigate' && url.origin === self.location.origin) {
+    // P1-6: navigation-fallback — офлайн и диплинки (#print и т.п.)
+    // отдают кэшированный index.html, а не текст 'Offline'
+    const indexUrl = new URL('index.html', self.registration.scope).href;
+    event.respondWith(
+      fetch(event.request).catch(() =>
+        caches.match(indexUrl).then((cached) =>
+          cached || new Response('Offline', { status: 503 })
+        )
+      )
     );
   } else {
     event.respondWith(

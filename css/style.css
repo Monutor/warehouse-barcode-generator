@@ -904,6 +904,15 @@ button {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  padding: 12px;
+  overflow-y: auto;
+  /* Скролл внутри модалки не прокручивает страницу под ней */
+  overscroll-behavior: contain;
+}
+
+/* JS ставит/снимает при открытых модалках — фон не скроллится */
+body.modal-open {
+  overflow: hidden;
 }
 
 /* ===== Barcode modal (minimalist card design) ===== */
@@ -911,6 +920,13 @@ button {
   position: relative;
   max-width: 760px;
   width: 100%;
+  /* Модалка никогда не выше экрана; при переполнении скроллится тело,
+     шапка с крестиком и футер всегда на месте */
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  display: flex;
+  flex-direction: column;
+  margin: auto;
   background: #ffffff;
   border-radius: 16px;
   overflow: hidden;
@@ -926,6 +942,7 @@ button {
 .barcode-modal-header {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   padding: 16px 20px;
   border-bottom: 1px solid var(--card-border);
 }
@@ -978,6 +995,9 @@ button {
 
 .barcode-modal-body {
   padding: 20px 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
 }
 
 .barcode-modal-content {
@@ -1001,9 +1021,20 @@ button {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
   gap: 8px;
   padding: 12px 20px;
   border-top: 1px solid var(--card-border);
+}
+
+.barcode-modal-footer > .btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.barcode-modal-footer .barcode-format-toggle {
+  flex-shrink: 0;
 }
 
 [data-theme="dark"] .barcode-modal-footer {
@@ -1067,7 +1098,24 @@ button {
   }
 
   .barcode-modal-footer {
-    padding: 14px 20px;
+    padding: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* Переключатель формата — отдельной строкой по центру,
+     кнопки действий делят вторую строку по содержимому */
+  .barcode-modal-footer .barcode-format-toggle {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .barcode-modal-footer > .btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 0.8rem;
+    white-space: nowrap;
   }
 }
 
@@ -1123,6 +1171,12 @@ button {
   width: 100%;
 }
 
+/* Строка «Арт./ШК» в карточках панели: переносится, а не распирает модалку */
+.barcode-right-panel .product-info-meta {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
 .barcode-right-panel .barcode-modal-content {
   display: flex;
   justify-content: center;
@@ -1139,6 +1193,31 @@ button {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* ===== Список найденных товаров: собственный скролл ===== */
+.product-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 0;
+  max-height: 38vh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.product-results-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.product-results-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.product-results-list::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 4px;
 }
 
 /* ===== Barcode in modal ===== */
@@ -1682,6 +1761,37 @@ button {
   .shelf-grid--six-col {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* ===== Quick action cards: иконка сверху по центру, подпись под ней ===== */
+.shelf-card.quick-action {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 14px 8px;
+  min-height: 108px;
+}
+
+.shelf-card.quick-action .qa-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.shelf-card.quick-action .qa-icon .icon-img {
+  width: 26px;
+  height: 26px;
+  align-self: center;
+}
+
+.shelf-card.quick-action .name {
+  justify-content: center;
+  font-size: 0.85rem;
 }
 
 .mvideo-search-input {

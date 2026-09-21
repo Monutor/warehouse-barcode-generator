@@ -653,10 +653,16 @@ const app = Vue.createApp({
       return this.printQueue.length;
     },
 
-    printShelves() {
-      const set = this.printQueueSet;
-      if (set.size === 0) return [];
-      return dataLayer.shelves.filter(s => set.has(s.barcode));
+    printItems() {
+      const out = [];
+      for (const b of this.printQueue) {
+        if (dataLayer.barcodeIndex.has(b)) {
+          out.push({ ...dataLayer.barcodeIndex.get(b), kind: 'shelf' });
+        } else if (dataLayer.productByBarcode.has(b)) {
+          out.push({ ...dataLayer.productByBarcode.get(b), kind: 'product' });
+        }
+      }
+      return out;
     },
 
     foundProducts() {
@@ -949,8 +955,6 @@ const app = Vue.createApp({
       this.barcodeModalOpen = false;
       this.barcodeMode = 'shelf';
       this.productPanelOpen = false;
-      this.productSearchArticle = '';
-      this.productSearchQuery = '';
     },
 
     _lockBodyScroll() {
@@ -1059,11 +1063,12 @@ const app = Vue.createApp({
 
     async printAll() {
       vibrate();
-      const shelves = this.printShelves;
-      if (shelves.length === 0) return;
+      const items = this.printItems;
+      if (items.length === 0) return;
       this.printLoading = true;
       this.showToast('Генерация штрихов для печати...');
-      await this.renderPrintPages(shelves);
+      await this.renderPrintPages(items, (item) =>
+        item.kind === 'product' ? item.name + ' | ' + item.article : item.name);
       this.printLoading = false;
     },
 
@@ -1098,10 +1103,11 @@ const app = Vue.createApp({
       let idx = 0;
       for (const item of list) {
         try {
-          const text = getText ? getText(item) : item.name;
-          const barcode = item.barcode || transliterate(text);
-          const result = await barcodeGenerator.generate(barcode, text);
-          html += '<div class="print-label">' + result.svg + '</div>';
+          const subText = getText ? getText(item) : item.name;
+          const barcode = item.barcode || transliterate(subText);
+          const caption = item.barcode || subText;
+          const result = await barcodeGenerator.generate(barcode, caption);
+          html += '<div class="print-label">' + result.svg + '<div class="print-label-name">' + subText + '</div></div>';
           idx++;
           if (idx % PRINT_LABELS_PER_PAGE === 0 && idx < list.length) {
             html += '</div><div class="print-page">';
@@ -1172,6 +1178,8 @@ const app = Vue.createApp({
       for (const key of keys) {
         let barcode = null;
         if (dataLayer.barcodeIndex.has(key)) {
+          barcode = key;
+        } else if (dataLayer.productByBarcode.has(key)) {
           barcode = key;
         } else {
           const shelf = dataLayer.findShelf(key);

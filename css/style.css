@@ -308,11 +308,27 @@ button {
 }
 
 .shelf-card .name {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   font-weight: 600;
   font-size: 0.9rem;
   color: var(--text-color);
+  word-break: break-word;
+}
+
+.kind-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-right: 4px;
+  color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.12);
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .shelf-card .icons {
@@ -1022,7 +1038,9 @@ body.modal-open {
   align-items: center;
   justify-content: flex-end;
   flex-shrink: 0;
-  flex-wrap: nowrap;
+  /* Кнопок в режиме товара 7 штук — в одну строку 720px не влезают,
+     поэтому разрешаем перенос на вторую строку вместо вылезания за края */
+  flex-wrap: wrap;
   gap: 8px;
   padding: 12px 20px;
   border-top: 1px solid var(--card-border);
@@ -1119,9 +1137,107 @@ body.modal-open {
   }
 }
 
+/* ===== Barcode modal as bottom-sheet (mobile/tablet ≤768px) ===== */
+@media (max-width: 768px) {
+  /* Шит прижат к низу экрана. QR-сканер остаётся центрированным:
+     у его диалога margin:auto, а правила шита его исключают */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end !important;
+  }
+
+  .barcode-modal-dialog:not(.barcode-modal-dialog--qr) {
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    border-radius: 20px 20px 0 0;
+    /* Место под «ручку» шита */
+    padding-top: 22px;
+  }
+
+  /* «Ручка» шита */
+  .barcode-modal-dialog:not(.barcode-modal-dialog--qr)::before {
+    content: "";
+    position: absolute;
+    top: 9px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 42px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--card-border);
+  }
+
+  .barcode-modal-dialog:not(.barcode-modal-dialog--qr) .barcode-modal-header {
+    padding: 12px 16px;
+  }
+
+  .barcode-modal-dialog:not(.barcode-modal-dialog--qr) .barcode-modal-body {
+    padding: 20px 16px;
+  }
+
+  /* Футер — сетка 2 колонки; переключатель формата — сегмент на всю ширину */
+  .barcode-modal-dialog:not(.barcode-modal-dialog--qr) .barcode-modal-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .barcode-modal-dialog:not(.barcode-modal-dialog--qr) .barcode-modal-footer .barcode-format-toggle {
+    grid-column: 1 / -1;
+    display: flex;
+    width: 100%;
+  }
+
+  .barcode-modal-dialog:not(.barcode-modal-dialog--qr) .barcode-modal-footer .barcode-format-toggle .btn {
+    flex: 1 1 0;
+  }
+
+  .barcode-modal-dialog:not(.barcode-modal-dialog--qr) .barcode-modal-footer > .btn {
+    width: 100%;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+}
+
 /* ===== Product panel in barcode modal ===== */
 .barcode-modal-dialog--split {
   max-width: 780px;
+}
+
+/* Режим товара на десктопе: футер сеткой 2 колонки, как в мобильном шите.
+   Только выше 768px — ниже работает шит со своей сеткой. */
+@media (min-width: 769px) {
+  .barcode-modal-dialog--product .barcode-modal-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    justify-content: stretch;
+    gap: 8px;
+  }
+
+  .barcode-modal-dialog--product .barcode-modal-footer .barcode-format-toggle {
+    grid-column: 1 / -1;
+    display: flex;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .barcode-modal-dialog--product .barcode-modal-footer .barcode-format-toggle .btn {
+    flex: 1 1 0;
+  }
+
+  .barcode-modal-dialog--product .barcode-modal-footer > .btn {
+    width: 100%;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
 }
 
 .barcode-modal-body--split {
@@ -1479,6 +1595,11 @@ body.modal-open {
     background: #fff !important;
   }
 
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
   .print-area {
     display: block !important;
     position: absolute;
@@ -1495,36 +1616,56 @@ body.modal-open {
 
 .print-page {
   width: 210mm;
-  min-height: 297mm;
+  height: 297mm;
   padding: 12mm 15mm;
   box-sizing: border-box;
   page-break-after: always;
+  break-after: page;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  overflow: hidden;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  gap: 8mm 0;
+  gap: 3mm 0;
+}
+
+.print-page:last-child {
+  page-break-after: auto;
+  break-after: auto;
 }
 
 .print-label {
   width: 50%;
+  height: 43mm;
+  padding: 2mm;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  overflow: hidden;
   border: 2px dashed #999999;
   box-sizing: border-box;
 }
 
 .print-label svg {
   max-width: 80mm;
+  max-height: 30mm;
+  width: auto;
   height: auto;
 }
 
 .print-label-name {
   font-size: 10pt;
   font-family: sans-serif;
-  margin-top: 2mm;
+  margin-top: 1mm;
+  line-height: 1.2;
+  max-height: 2.4em;
+  overflow: hidden;
+  word-break: break-word;
 }
 
 .hidden {
@@ -1831,6 +1972,131 @@ body.modal-open {
   color: #ef9a9a;
 }
 
-[data-theme="dark"] .shelf-card.mvideo:hover {
-  background: rgba(239, 83, 80, 0.18);
+  [data-theme="dark"] .shelf-card.mvideo:hover {
+    background: rgba(239, 83, 80, 0.18);
+  }
+
+/* ===== Print queue: presentable single-column cards ===== */
+.print-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.print-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.print-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.print-list::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 4px;
+}
+
+.print-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-left: 3px solid var(--primary);
+  border-radius: 8px;
+  padding: 12px 8px 12px 14px;
+  cursor: pointer;
+  box-shadow: var(--card-shadow);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .print-card {
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+}
+
+.print-card:hover {
+  border-color: var(--primary);
+  border-left-color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.06);
+}
+
+.print-card--product {
+  border-left-color: var(--primary);
+}
+
+.print-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.print-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.print-card-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: var(--text-color);
+  word-break: break-word;
+}
+
+.kind-tag--product {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.kind-tag--shelf {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--text-muted);
+  background: rgba(128, 128, 128, 0.12);
+}
+
+.print-card-meta {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  word-break: break-all;
+}
+
+.print-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.print-card-actions .action-icon {
+  opacity: 0.7;
+}
+
+.print-card-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  font-size: 1rem;
+  border-radius: 6px;
+  opacity: 0.7;
+}
+
+.print-card-remove:hover {
+  opacity: 1;
+  background: rgba(220, 53, 69, 0.12);
 }

@@ -260,10 +260,10 @@
                   <span class="product-info-barcode">ШК {{ product.barcode }} <button type="button" class="copy-barcode-btn" @click.stop="copyProductBarcode(product)" title="Копировать ШК">📋</button></span>
                 </div>
               </div>
-              <span class="icons">▶</span>
-            </div>
-          </template>
-          <button v-if="foundProducts.length > 0" class="btn btn-primary w-100 py-2 mt-2" @click="printProductFound" :disabled="printProductLoading"><svg class="heading-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19,8H5V3H19V8M19,13A1,1 0 0,1 18,12A1,1 0 0,1 19,11A1,1 0 0,1 20,12A1,1 0 0,1 19,13M17,17V13H7V17H17M19,6H5C3.34,6 2,7.34 2,9V18H6V21H18V18H22V9C22,7.34 20.66,6 19,6Z"/></svg> Печать всех ({{ foundProducts.length }})</button>
+               <span class="icons"><span class="action-icon" @click.stop="togglePrintQueue(product.barcode)">{{ isInPrintQueue(product.barcode) ? '🖨️' : '🖨' }}</span><span>▶</span></span>
+             </div>
+           </template>
+           <button v-if="foundProducts.length > 0" class="btn btn-primary w-100 py-2 mt-2" @click="printProductFound" :disabled="printProductLoading"><svg class="heading-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19,8H5V3H19V8M19,13A1,1 0 0,1 18,12A1,1 0 0,1 19,11A1,1 0 0,1 20,12A1,1 0 0,1 19,13M17,17V13H7V17H17M19,6H5C3.34,6 2,7.34 2,9V18H6V21H18V18H22V9C22,7.34 20.66,6 19,6Z"/></svg> Печать всех ({{ foundProducts.length }})</button>
           <div v-if="productSearchQuery.trim() && foundProducts.length === 0 && notFoundArticles.length > 0" class="text-center text-muted py-3">
             Товар «{{ notFoundArticles[0] }}» не найден
           </div>
@@ -314,22 +314,32 @@
             <span>🖨️ Печать</span>
             <span class="d-flex gap-2 align-items-center">
               <button class="back-btn" @click="backFromView">← Назад</button>
-              <button v-if="printShelves.length > 0" class="btn btn-sm btn-outline-danger" @click="clearPrintQueue">✕ Очистить всё</button>
+              <button v-if="printItems.length > 0" class="btn btn-sm btn-outline-danger" @click="clearPrintQueue">✕ Очистить всё</button>
             </span>
           </div>
-          <div v-if="printShelves.length === 0" class="text-center text-muted py-3">Очередь печати пуста</div>
+          <div v-if="printItems.length === 0" class="text-center text-muted py-3">Очередь печати пуста</div>
           <div v-else>
-            <div class="shelf-grid mb-4">
-              <div v-for="shelf in printShelves" :key="shelf.barcode" class="shelf-card special" @click="selectShelf(shelf)">
-                <span class="name">{{ shelf.name }}</span>
-                <span class="icons">
-                  <span class="action-icon" @click.stop="removeFromFavorites(shelf.barcode)">{{ isFavorite(shelf.barcode) ? '★' : '☆' }}</span>
-                  <span class="action-icon" @click.stop="removeFromPrintQueue(shelf.barcode)">✕</span>
+            <div class="print-list mb-4">
+              <div v-for="item in printItems" :key="item.barcode" class="print-card" :class="{ 'print-card--product': item.kind === 'product' }" @click="item.kind === 'product' ? selectProduct(item) : selectShelf(item)">
+                <div class="print-card-body">
+                  <div class="print-card-top">
+                    <span v-if="item.kind === 'product'" class="kind-tag kind-tag--product">Товар</span>
+                    <span v-else class="kind-tag kind-tag--shelf">Полка</span>
+                    <span class="print-card-name">{{ item.name }}</span>
+                  </div>
+                  <div class="print-card-meta">
+                    <span v-if="item.kind === 'product'">Арт. {{ item.article }} · ШК {{ item.barcode }}</span>
+                    <span v-else>ШК {{ item.barcode }}</span>
+                  </div>
+                </div>
+                <span class="icons print-card-actions">
+                  <span v-if="item.kind === 'shelf'" class="action-icon" @click.stop="removeFromFavorites(item.barcode)">{{ isFavorite(item.barcode) ? '★' : '☆' }}</span>
+                  <span class="action-icon print-card-remove" @click.stop="removeFromPrintQueue(item.barcode)" title="Убрать из очереди">✕</span>
                 </span>
               </div>
             </div>
-            <button class="btn btn-primary w-100 py-2 mb-3" @click="printAll" :disabled="printLoading">🖨 Печать всех ({{ printShelves.length }})</button>
-           </div>
+            <button class="btn btn-primary w-100 py-2 mb-3" @click="printAll" :disabled="printLoading">🖨 Печать всех ({{ printItems.length }})</button>
+          </div>
         </template>
     </template>
 
@@ -357,7 +367,7 @@
 
     <!-- QR Scanner modal -->
     <div v-if="qrScannerOpen" class="modal d-block modal-overlay" tabindex="-1" @click.self="closeQrScanner">
-      <div class="barcode-modal-dialog">
+      <div class="barcode-modal-dialog barcode-modal-dialog--qr">
         <div class="barcode-modal-header">
           <span class="barcode-modal-title">📷 QR-сканер товара</span>
           <button type="button" class="barcode-modal-close" @click="closeQrScanner">×</button>
@@ -418,7 +428,7 @@
 
     <!-- Barcode modal -->
     <div v-if="barcodeModalOpen" class="modal d-block modal-overlay" tabindex="-1" @click.self="closeBarcodeModal">
-      <div class="barcode-modal-dialog" :class="{'barcode-modal-dialog--split': productPanelOpen}">
+      <div class="barcode-modal-dialog" :class="{'barcode-modal-dialog--split': productPanelOpen, 'barcode-modal-dialog--product': barcodeMode === 'product'}">
         <div class="barcode-modal-header">
           <div class="barcode-modal-header-left">
             <span class="barcode-modal-title" v-if="barcodeMode === 'product'">{{ currentBarcodeShelf?.name }} <small class="text-muted">(Арт. {{ currentBarcodeShelf?.article }} <button type="button" class="copy-barcode-btn" @click.stop="copyProductArticle(currentBarcodeShelf)" title="Копировать артикул">📋</button>)</small></span>
@@ -460,8 +470,8 @@
                         <span class="product-info-article">Арт. {{ product.article }} <button type="button" class="copy-barcode-btn" @click.stop="copyProductArticle(product)" title="Копировать артикул">📋</button></span>
                         <span class="product-info-barcode">ШК {{ product.barcode }} <button type="button" class="copy-barcode-btn" @click.stop="copyProductBarcode(product)" title="Копировать ШК">📋</button></span>
                       </div>
-                    </div>
-                    <span class="icons">▶</span>
+                      </div>
+                    <span class="icons"><span class="action-icon" @click.stop="togglePrintQueue(product.barcode)">{{ isInPrintQueue(product.barcode) ? '🖨️' : '🖨' }}</span><span>▶</span></span>
                   </div>
                 </template>
                 <div v-if="productSearchQuery.trim() && foundProducts.length === 0 && notFoundArticles.length > 0" class="text-center text-muted small py-2">
@@ -489,7 +499,8 @@
           <button type="button" class="btn btn-outline-secondary barcode-btn-copy" @click="copyBarcode" title="Копировать ШК">📋 ШК</button>
           <button type="button" v-if="barcodeMode === 'product'" class="btn btn-outline-secondary barcode-btn-copy" @click="copyCurrentArticle" title="Копировать артикул">📋 Артикул</button>
           <button type="button" class="btn btn-outline-primary barcode-btn-download" @click="downloadBarcode">⬇ Скачать</button>
-          <button type="button" class="btn btn-primary barcode-btn-print" @click="printOne(currentBarcodeShelf)">🖨 Печать</button>
+           <button type="button" class="btn btn-primary barcode-btn-print" @click="printOne(currentBarcodeShelf)">🖨 Печать</button>
+           <button type="button" v-if="barcodeMode === 'product'" class="btn btn-outline-secondary" @click="togglePrintQueue(currentBarcodeShelf.barcode)">{{ isInPrintQueue(currentBarcodeShelf.barcode) ? '✔ В очереди' : '🖨️ В очередь' }}</button>
           <button type="button" class="btn btn-outline-secondary" @click="rescanQr" v-if="barcodeMode === 'product'">📷 Ещё QR</button>
         </div>
       </div>

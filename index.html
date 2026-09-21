@@ -12,6 +12,14 @@
   <link href="css/style.css" rel="stylesheet">
 </head>
 <body>
+  <!-- Boot splash: виден до монтирования Vue, скрывает вспышку {{ }} -->
+  <div id="boot-loader" role="status" aria-label="Загрузка приложения">
+    <div class="boot-loader-box">
+      <div class="boot-loader-spinner" aria-hidden="true"></div>
+      <div class="boot-loader-title">Генератор штрих-кодов</div>
+      <div class="boot-loader-sub">Загрузка…</div>
+    </div>
+  </div>
   <noscript>
     <div class="noscript-container">
       <h2>JavaScript отключён</h2>
@@ -23,7 +31,7 @@
     <p>Проверьте подключение к интернету и обновите страницу.</p>
     <button onclick="location.reload()" class="reload-btn">Обновить</button>
   </div>
-  <div id="app" class="min-vh-100 p-3">
+  <div id="app" class="min-vh-100 p-3" v-cloak>
     <!-- Loading skeleton -->
     <div v-if="loading">
       <div class="py-4">
@@ -429,7 +437,7 @@
     <!-- Barcode modal -->
     <div v-if="barcodeModalOpen" class="modal d-block modal-overlay" tabindex="-1" @click.self="closeBarcodeModal">
       <div class="barcode-modal-dialog" :class="{'barcode-modal-dialog--split': productPanelOpen, 'barcode-modal-dialog--product': barcodeMode === 'product'}">
-        <div class="barcode-modal-header">
+        <div class="barcode-modal-header" @touchstart.passive="sheetTouchStart" @touchmove.passive="sheetTouchMove" @touchend="sheetTouchEnd" @touchcancel="sheetTouchEnd">
           <div class="barcode-modal-header-left">
             <span class="barcode-modal-title" v-if="barcodeMode === 'product'">{{ currentBarcodeShelf?.name }} <small class="text-muted">(Арт. {{ currentBarcodeShelf?.article }} <button type="button" class="copy-barcode-btn" @click.stop="copyProductArticle(currentBarcodeShelf)" title="Копировать артикул">📋</button>)</small></span>
             <span class="barcode-modal-title" v-else>{{ currentBarcodeShelf?.name || '' }}</span>
@@ -515,6 +523,8 @@
     if (typeof Vue === 'undefined') {
       document.getElementById('vue-load-error').classList.remove('hidden');
       document.getElementById('app').classList.add('hidden');
+      const bootLoader = document.getElementById('boot-loader');
+      if (bootLoader) bootLoader.remove();
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js" integrity="sha384-Kk5SjBOKprEnGfyBWfD2zROFd1Cu8kwOXxG2GIhYPcoDL2rBJS9P8Ud1ZMy4412a" crossorigin="anonymous"></script>

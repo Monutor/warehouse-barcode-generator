@@ -59,6 +59,63 @@ body {
   color: var(--text-color);
 }
 
+/* ===== Boot splash: виден до монтирования Vue, скрывает вспышку {{ }} ===== */
+[v-cloak] {
+  display: none !important;
+}
+
+#boot-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Цвета захардкожены под тёмную тему по умолчанию:
+     сплэш рисуется до того, как JS выставит data-theme */
+  background-color: #121212;
+}
+
+.boot-loader-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+}
+
+.boot-loader-spinner {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 4px solid #333333;
+  border-top-color: #f5a623;
+  animation: boot-spin 0.9s linear infinite;
+}
+
+@keyframes boot-spin {
+  to { transform: rotate(360deg); }
+}
+
+.boot-loader-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.boot-loader-sub {
+  font-size: 0.85rem;
+  color: #8a8a9a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-loader-spinner {
+    animation: none;
+    border-top-color: #333333;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   body {
     transition: background-color 0.3s ease, color 0.3s ease;
@@ -1174,6 +1231,23 @@ body.modal-open {
     padding: 12px 16px;
   }
 
+  /* Заголовок товара в шите — две строки: название + артикул целиком,
+     у каждой своё многоточие */
+  .barcode-modal-dialog--product:not(.barcode-modal-dialog--qr) .barcode-modal-title {
+    display: block;
+    min-width: 0;
+    line-height: 1.35;
+  }
+
+  .barcode-modal-dialog--product:not(.barcode-modal-dialog--qr) .barcode-modal-title small {
+    display: block;
+    font-weight: 400;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .barcode-modal-dialog:not(.barcode-modal-dialog--qr) .barcode-modal-body {
     padding: 20px 16px;
   }
@@ -1202,6 +1276,16 @@ body.modal-open {
     padding-bottom: 10px;
     font-size: 0.875rem;
     white-space: nowrap;
+  }
+
+  /* Swipe-to-close: во время тяги шит идёт 1:1 за пальцем,
+     на отпускании — плавный съезд вниз или пружинка назад */
+  .barcode-modal-dialog.sheet-dragging {
+    transition: none !important;
+  }
+
+  .barcode-modal-dialog.sheet-closing {
+    transition: transform 0.25s ease !important;
   }
 }
 

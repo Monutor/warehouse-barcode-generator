@@ -957,6 +957,53 @@ const app = Vue.createApp({
       this.productPanelOpen = false;
     },
 
+    // Swipe-to-close шторки (только bottom-sheet ≤768px, тянут за шапку).
+    // Тапы по кнопкам шапки не страдают: всё passive, порог мёртвой зоны 8px.
+    sheetTouchStart(e) {
+      if (!window.matchMedia('(max-width: 768px)').matches) return;
+      const dialog = e.currentTarget.closest('.barcode-modal-dialog');
+      if (!dialog || !e.touches.length) return;
+      this._sheetEl = dialog;
+      this._sheetStartY = e.touches[0].clientY;
+      this._sheetStartTime = Date.now();
+      this._sheetDeltaY = 0;
+      this._sheetTracking = true;
+      dialog.classList.add('sheet-dragging');
+    },
+
+    sheetTouchMove(e) {
+      if (!this._sheetTracking || !this._sheetEl || !e.touches.length) return;
+      const dy = Math.max(0, e.touches[0].clientY - this._sheetStartY);
+      this._sheetDeltaY = dy;
+      // Мёртвая зона — короткие тапы не дёргают шит
+      this._sheetEl.style.transform = dy < 8 ? '' : 'translateY(' + dy + 'px)';
+    },
+
+    sheetTouchEnd() {
+      if (!this._sheetTracking || !this._sheetEl) return;
+      const dialog = this._sheetEl;
+      const dy = this._sheetDeltaY;
+      const dt = Math.max(Date.now() - this._sheetStartTime, 1);
+      this._sheetTracking = false;
+      this._sheetEl = null;
+      dialog.classList.remove('sheet-dragging');
+      dialog.classList.add('sheet-closing');
+      // Закрываем при протяжке >120px либо быстром броске вниз
+      if (dy > 120 || (dy > 40 && dy / dt > 0.5)) {
+        dialog.style.transform = 'translateY(110%)';
+        vibrate();
+        setTimeout(() => {
+          dialog.classList.remove('sheet-closing');
+          dialog.style.transform = '';
+          this.closeBarcodeModal();
+        }, 260);
+      } else {
+        // Пружинка назад
+        dialog.style.transform = '';
+        setTimeout(() => dialog.classList.remove('sheet-closing'), 260);
+      }
+    },
+
     _lockBodyScroll() {
       const locked = this.barcodeModalOpen || this.qrScannerOpen;
       document.body.classList.toggle('modal-open', locked);
@@ -1604,6 +1651,9 @@ const app = Vue.createApp({
   async mounted() {
     const errDiv = document.getElementById('vue-load-error');
     if (errDiv) errDiv.style.display = 'none';
+    // Vue скомпилировал шаблон — сразу убираем boot-сплэш, дальше показывает скелетон.
+    const bootLoader = document.getElementById('boot-loader');
+    if (bootLoader) bootLoader.remove();
     this.initTheme();
     await this.init();
 

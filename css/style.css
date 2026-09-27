@@ -74,6 +74,10 @@ body {
   /* Цвета захардкожены под тёмную тему по умолчанию:
      сплэш рисуется до того, как JS выставит data-theme */
   background-color: #121212;
+  /* Страховка на чистом CSS: если js/app.js не загрузился или не дошёл до
+     mounted(), сплэш не должен навсегда закрыть приложение. Обычно его
+     снимает app.js сразу после монтирования Vue. */
+  animation: boot-fade-out 0.4s ease 3s forwards;
 }
 
 .boot-loader-box {
@@ -98,6 +102,14 @@ body {
   to { transform: rotate(360deg); }
 }
 
+@keyframes boot-fade-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
 .boot-loader-title {
   font-size: 1.1rem;
   font-weight: 600;
@@ -113,6 +125,10 @@ body {
   .boot-loader-spinner {
     animation: none;
     border-top-color: #333333;
+  }
+  /* Сплэш всё равно нужно убрать, но без перехода: сохраняем задержку. */
+  #boot-loader {
+    animation-duration: 0.01ms;
   }
 }
 

@@ -287,19 +287,85 @@ class DataLayer {
     return products;
   }
 
-  async loadProducts() {
+  async loadProducts(onProgress) {
     let products = [];
     let commitDate = null;
     // P1-3: берём реальную версию из данных, а не Date.now()
     let version = null;
 
+    // Fetch commit date first — independent of db.json parsing
+    try {
+      commitDate = await this._getCachedCommitDate();
+    } catch {}
+
     try {
       const resp = await fetch('https://raw.githubusercontent.com/Monutor/DataBaseProducts/main/db.json');
       if (resp.ok) {
-        const remote = await resp.json();
-        products = this._parseProducts(remote);
-        if (remote && remote.version != null) version = remote.version;
-        commitDate = await this._getCachedCommitDate();
+        const contentLength = Number(resp.headers.get('Content-Length') || 0);
+        const reader = resp.body.getReader();
+        const chunks = [];
+        let received = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          received += value.length;
+          if (onProgress && contentLength) {
+            onProgress({ stage: 'download', loaded: received, total: contentLength });
+          }
+        }
+        const total = chunks.reduce((a, b) => a + b.length, 0);
+        const buf = new Uint8Array(total);
+        let offset = 0;
+        for (const c of chunks) { buf.set(c, offset); offset += c.length; }
+        let remote;
+        try {
+          // Попытка распарсить как обычный JSON
+          const text = new TextDecoder().decode(buf);
+          remote = JSON.parse(text);
+        } catch {
+          // Если не получилось — пробуем распаковать gzip
+          try {
+            const view = new Uint8Array(buf);
+            if (typeof DecompressionStream !== 'undefined' && view.length >= 2 && view[0] === 0x1f && view[1] === 0x8b) {
+              // Потоковая распаковка через pipeThrough
+              const source = new ReadableStream({
+                start(controller) {
+                  controller.enqueue(buf);
+                  controller.close();
+                }
+              });
+              const ds = new DecompressionStream('gzip');
+              const decompressed = source.pipeThrough(ds);
+              if (onProgress) onProgress({ stage: 'decompress', loaded: 0 });
+              const reader = decompressed.getReader();
+              const chunks = [];
+              let totalDecomp = 0;
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                totalDecomp += value.length;
+                if (onProgress) {
+                  onProgress({ stage: 'decompress', loaded: totalDecomp });
+                }
+              }
+              const out = new Uint8Array(totalDecomp);
+              let offset = 0;
+              for (const c of chunks) { out.set(c, offset); offset += c.length; }
+              if (onProgress) onProgress({ stage: 'parse', loaded: totalDecomp });
+              await new Promise(r => setTimeout(r, 0));
+              const text = new TextDecoder().decode(out);
+              remote = JSON.parse(text);
+            }
+          } catch (e) {
+            console.error('Gzip decompress error', e);
+          }
+        }
+        if (remote) {
+          products = this._parseProducts(remote);
+          if (remote && remote.version != null) version = remote.version;
+        }
       }
     } catch {}
 
@@ -565,6 +631,7 @@ const app = Vue.createApp({
       mvideoViewOpen: false,
       mvideoArticle: '',
       shelvesViewOpen: false,
+      loadStatus: '',
 
     };
   },
@@ -1193,9 +1260,21 @@ const app = Vue.createApp({
     async init() {
       try {
         await barcodeCache.init();
+        this.loadStatus = 'Идёт загрузка базы данных...';
         const [shelfData, productData] = await Promise.all([
           dataLayer.load(),
-          dataLayer.loadProducts()
+          dataLayer.loadProducts((progress) => {
+            if (!progress) return;
+            if (progress.stage === 'download' && progress.total) {
+              const pct = Math.round(progress.loaded / progress.total * 100);
+              this.loadStatus = `Загрузка базы данных: ${pct}% (${Math.round(progress.loaded/1024)} КБ / ${Math.round(progress.total/1024)} КБ)`;
+            } else if (progress.stage === 'decompress') {
+              const mb = Math.round(progress.loaded / 1024 / 1024 * 10) / 10;
+              this.loadStatus = `Распаковка базы данных: ${mb} МБ`;
+            } else if (progress.stage === 'parse') {
+              this.loadStatus = 'Парсинг базы данных...';
+            }
+          })
         ]);
         this.stats = dataLayer.getStats();
         this.dataVersion = productData?.version || shelfData.version || '';
@@ -1205,9 +1284,11 @@ const app = Vue.createApp({
         saveFavorites(this.favorites);
         savePrintQueue(this.printQueue);
         this.loading = false;
+        this.loadStatus = '';
       } catch (e) {
         this.loading = false;
         this.error = 'Не удалось загрузить данные. Проверьте подключение и обновите страницу.';
+        this.loadStatus = '';
       }
     },
 

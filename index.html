@@ -45,6 +45,9 @@
         <div class="skeleton skeleton-search"></div>
         <div v-for="i in 8" :key="i" class="skeleton skeleton-card"></div>
       </div>
+      <div v-if="loadStatus" class="position-fixed top-0 start-50 translate-middle-x bg-dark text-white px-4 py-2 rounded shadow" style="z-index:1050; font-weight:500;">
+        {{ loadStatus }}
+      </div>
     </div>
 
     <!-- Error -->

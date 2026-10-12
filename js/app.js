@@ -292,6 +292,7 @@ class DataLayer {
     let commitDate = null;
     // P1-3: берём реальную версию из данных, а не Date.now()
     let version = null;
+    let remoteUpdatedAt = null;
 
     // Fetch commit date first — independent of db.json parsing
     try {
@@ -365,6 +366,7 @@ class DataLayer {
         if (remote) {
           products = this._parseProducts(remote);
           if (remote && remote.version != null) version = remote.version;
+          if (remote && remote.updatedAt) remoteUpdatedAt = remote.updatedAt;
         }
       }
     } catch {}
@@ -376,6 +378,7 @@ class DataLayer {
           const local = await localResp.json();
           products = this._parseProducts(local);
           if (version == null && local && local.version != null) version = local.version;
+          if (!remoteUpdatedAt && local && local.updatedAt) remoteUpdatedAt = local.updatedAt;
           if (!commitDate && local.updatedAt) commitDate = new Date(local.updatedAt);
         }
       } catch {}
@@ -396,7 +399,7 @@ class DataLayer {
 
     return {
       version: version != null ? version : (commitDate ? commitDate.getTime() : Date.now()),
-      updatedAt: commitDate ? commitDate.toISOString() : null
+      updatedAt: remoteUpdatedAt ? new Date(remoteUpdatedAt).toISOString() : (commitDate ? commitDate.toISOString() : null)
     };
   }
 

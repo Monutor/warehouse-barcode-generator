@@ -634,6 +634,7 @@ const app = Vue.createApp({
       mvideoViewOpen: false,
       mvideoArticle: '',
       shelvesViewOpen: false,
+      supportModalOpen: false,
       loadStatus: '',
 
     };
@@ -812,6 +813,9 @@ const app = Vue.createApp({
       this._lockBodyScroll();
     },
     qrScannerOpen() {
+      this._lockBodyScroll();
+    },
+    supportModalOpen() {
       this._lockBodyScroll();
     },
   },
@@ -1075,7 +1079,7 @@ const app = Vue.createApp({
     },
 
     _lockBodyScroll() {
-      const locked = this.barcodeModalOpen || this.qrScannerOpen;
+      const locked = this.barcodeModalOpen || this.qrScannerOpen || this.supportModalOpen;
       document.body.classList.toggle('modal-open', locked);
     },
 
@@ -1730,6 +1734,15 @@ const app = Vue.createApp({
       this.searchInput = '';
     },
 
+    openSupport() {
+      vibrate();
+      this.supportModalOpen = true;
+    },
+
+    closeSupport() {
+      this.supportModalOpen = false;
+    },
+
   },
 
   async mounted() {
@@ -1769,6 +1782,8 @@ const app = Vue.createApp({
             this.closeProductSearch();
           } else if (this.shelvesViewOpen) {
             this.closeShelves();
+          } else if (this.supportModalOpen) {
+            this.closeSupport();
           }
         }
     });

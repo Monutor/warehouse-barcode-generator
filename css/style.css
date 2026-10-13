@@ -2004,6 +2004,16 @@ body.modal-open {
   }
 }
 
+.shelf-grid--seven-col {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+@media screen and (max-width: 576px) {
+  .shelf-grid--seven-col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 /* ===== Quick action cards: иконка сверху по центру, подпись под ней ===== */
 .shelf-card.quick-action {
   flex-direction: column;
@@ -2075,6 +2085,33 @@ body.modal-open {
   [data-theme="dark"] .shelf-card.mvideo:hover {
     background: rgba(239, 83, 80, 0.18);
   }
+
+/* ===== Support quick action card ===== */
+.shelf-card.support {
+  border-color: #e91e63;
+  background: rgba(233, 30, 99, 0.08);
+}
+
+.shelf-card.support .name {
+  color: #e91e63;
+}
+
+.shelf-card.support:hover {
+  background: rgba(233, 30, 99, 0.15);
+}
+
+[data-theme="dark"] .shelf-card.support {
+  border-color: #f06292;
+  background: rgba(240, 98, 146, 0.1);
+}
+
+[data-theme="dark"] .shelf-card.support .name {
+  color: #f8bbd0;
+}
+
+[data-theme="dark"] .shelf-card.support:hover {
+  background: rgba(240, 98, 146, 0.18);
+}
 
 /* ===== Print queue: presentable single-column cards ===== */
 .print-list {

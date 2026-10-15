@@ -108,28 +108,31 @@ class BarcodeCache {
 
   async enforceLimit() {
     if (!this.db) return;
-    const allKeys = await new Promise((resolve, reject) => {
+    const entries = [];
+    await new Promise((resolve, reject) => {
       const tx = this.db.transaction('barcodes', 'readonly');
-      const req = tx.objectStore('barcodes').getAllKeys();
-      req.onsuccess = () => resolve(req.result);
+      const store = tx.objectStore('barcodes');
+      const req = store.openCursor();
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (cursor) {
+          entries.push({ key: cursor.key, timestamp: cursor.value.timestamp });
+          cursor.continue();
+        } else {
+          resolve();
+        }
+      };
       req.onerror = () => reject(req.error);
     });
-    if (allKeys.length <= CACHE_MAX_ENTRIES) return;
-    const entries = await new Promise((resolve, reject) => {
-      const tx = this.db.transaction('barcodes', 'readonly');
-      const req = tx.objectStore('barcodes').getAll();
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-    const sorted = allKeys.map((key, i) => ({ key, timestamp: entries[i].timestamp }))
-      .sort((a, b) => a.timestamp - b.timestamp);
-    const toDelete = sorted.slice(0, allKeys.length - CACHE_MAX_ENTRIES);
-    const tx = this.db.transaction('barcodes', 'readwrite');
-    const store = tx.objectStore('barcodes');
-    for (const item of toDelete) {
-      store.delete(item.key);
-    }
-    return new Promise((resolve, reject) => {
+    if (entries.length <= CACHE_MAX_ENTRIES) return;
+    entries.sort((a, b) => a.timestamp - b.timestamp);
+    const toDelete = entries.slice(0, entries.length - CACHE_MAX_ENTRIES).map(e => e.key);
+    await new Promise((resolve, reject) => {
+      const tx = this.db.transaction('barcodes', 'readwrite');
+      const store = tx.objectStore('barcodes');
+      for (const key of toDelete) {
+        store.delete(key);
+      }
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -906,7 +909,9 @@ const app = Vue.createApp({
       const allRacks = this.getSectionRacks(sectionName);
       const total = allRacks.length;
       const step = Math.min(12, total - current);
-      this.sectionVisibleCount[sectionName] = current + step;
+      if (step > 0) {
+        this.sectionVisibleCount[sectionName] = current + step;
+      }
     },
 
     async generateBarcode(item) {

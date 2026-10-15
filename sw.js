@@ -1,4 +1,4 @@
-const CACHE_NAME = 'barcode-app-v17';
+const CACHE_NAME = 'barcode-app-v18';
 const CDN_CACHE_NAME = 'barcode-cdn-v6';
 
 // P1-6: относительные пути — работают и под /warehouse-barcode-generator/,

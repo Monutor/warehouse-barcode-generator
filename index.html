@@ -264,7 +264,10 @@
             <button class="back-btn" @click="closeProductSearch">← Назад</button>
           </div>
           <div class="mb-3">
-            <input type="text" class="form-control form-control-lg" v-model="productSearchArticle" placeholder="Артикул, ШК (полный или последние 4+ цифр) или название..." aria-label="Поиск товара по артикулу, ШК или названию">
+            <div class="search-input-wrap">
+              <input type="text" ref="productSearchInput" class="form-control form-control-lg" v-model="productSearchArticle" placeholder="Артикул, ШК (полный или последние 4+ цифр) или название..." aria-label="Поиск товара по артикулу, ШК или названию">
+              <button v-if="productSearchArticle" type="button" class="search-clear-btn" @click="clearProductSearch" title="Очистить" aria-label="Очистить поиск">&times;</button>
+            </div>
           </div>
 
           <template v-for="product in foundProducts" :key="product.article">

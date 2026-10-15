@@ -886,6 +886,16 @@ const app = Vue.createApp({
       this.productSearchQuery = '';
     },
 
+    clearProductSearch() {
+      this.productSearchArticle = '';
+      this.productSearchQuery = '';
+      // Возврат фокуса в поле — иначе после очистки пришлось бы тыкать в него заново
+      this.$nextTick(() => {
+        const el = this.$refs.productSearchInput;
+        if (el) el.focus();
+      });
+    },
+
     openProductPanel() {
       vibrate();
       this.productPanelOpen = true;

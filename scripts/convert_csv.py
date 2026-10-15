@@ -1,5 +1,4 @@
 import csv
-import glob
 import json
 import os
 import re
@@ -123,64 +122,12 @@ def convert_csv_to_json(csv_path, json_path):
         for w in level_warnings[:10]:
             print(f'  - {w}')
 
-def convert_products_to_json(csv_path, json_path):
-    products = {}
-    dup_articles = 0
-    with open(csv_path, 'r', encoding='utf-8-sig') as f:
-        reader = csv.DictReader(f, delimiter=';')
-        check_headers(reader.fieldnames,
-                      ['Код товара', 'Наименование', 'ШК товара'], csv_path)
-        for row in reader:
-            article = (row.get('Код товара') or '').strip()
-            name = (row.get('Наименование') or '').strip()
-            barcode = (row.get('ШК товара') or '').strip()
-            if not (article and barcode):
-                continue
-            # P1-7: дубли артикулов считаем и показываем, а не глотаем молча
-            if article in products:
-                dup_articles += 1
-                if dup_articles <= 10:
-                    print(f'ВНИМАНИЕ: дубль артикула {article!r} (оставлен первый)')
-                continue
-            products[article] = {
-                'article': article,
-                'name': name,
-                'barcode': barcode
-            }
-
-    now = datetime.now(timezone.utc)
-    version = now.strftime('%Y%m%d%H%M%S')
-    updated_at = now.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-    os.makedirs(os.path.dirname(json_path), exist_ok=True)
-    with open(json_path, 'w', encoding='utf-8') as f:
-        json.dump({
-            'version': version,
-            'updatedAt': updated_at,
-            'products': list(products.values())
-        }, f, ensure_ascii=False, indent=2)
-
-    print(f'Converted {len(products)} products to {json_path}')
-    print(f'Version: {version} | Updated: {updated_at}')
-    if dup_articles:
-        print(f'ВНИМАНИЕ: дублей артикулов пропущено: {dup_articles}')
-
-def find_input(pattern):
-    matches = glob.glob(os.path.join(os.getcwd(), pattern))
-    if not matches:
-        raise SystemExit(
-            f'Файл не найден по шаблону {pattern!r} (запускайте из корня репозитория: {os.getcwd()})'
-        )
-    return max(matches, key=os.path.getmtime)
-
 if __name__ == '__main__':
+    # Только полки. Товары идут из db.json через scripts/convert_db.py —
+    # этот скриптр больше не трогает data/products.json.
     script_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(script_dir)
     convert_csv_to_json(
         os.path.join(root_dir, 'warehouse_data.csv'),
         os.path.join(root_dir, 'data', 'shelves.json')
-    )
-    convert_products_to_json(
-        find_input('Остатки S187 *.csv'),
-        os.path.join(root_dir, 'data', 'products.json')
     )

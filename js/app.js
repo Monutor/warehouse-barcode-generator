@@ -249,6 +249,12 @@ function debounce(fn, delay) {
   };
 }
 
+function formatBytes(n) {
+  if (!n || n < 0) return '0 КБ';
+  if (n >= 1024 * 1024) return `${Math.round(n / 1024 / 1024)} МБ`;
+  return `${Math.round(n / 1024)} КБ`;
+}
+
 // === DataLayer ===
 class DataLayer {
   constructor() {
@@ -300,8 +306,14 @@ class DataLayer {
 
     let data;
     if (resp.body && onProgress) {
-      // 272К товаров — это ~26 МБ, читаем потоком и показываем прогресс
-      const contentLength = Number(resp.headers.get('Content-Length') || 0);
+      // 272К товаров — это ~26 МБ, читаем потоком и показываем прогресс.
+      // Content-Length описывает ТЕЛО НА ПРОВОДЕ, а reader отдаёт уже
+      // распакованные байты. При Content-Encoding: gzip это сжатый размер,
+      // и делить на него распакованный объём бессмысленно — прогресс уходит
+      // за 100%. В таком случае total неизвестен, UI покажет счётчик без %.
+      const encoding = (resp.headers.get('Content-Encoding') || '').trim().toLowerCase();
+      const encoded = encoding !== '' && encoding !== 'identity';
+      const contentLength = encoded ? 0 : Number(resp.headers.get('Content-Length') || 0);
       const reader = resp.body.getReader();
       const chunks = [];
       let received = 0;
@@ -1204,9 +1216,14 @@ const app = Vue.createApp({
           dataLayer.load(),
           dataLayer.loadProducts((progress) => {
             if (!progress) return;
-            if (progress.stage === 'download' && progress.total) {
-              const pct = Math.round(progress.loaded / progress.total * 100);
-              this.loadStatus = `Загрузка базы данных: ${pct}% (${Math.round(progress.loaded/1024)} КБ / ${Math.round(progress.total/1024)} КБ)`;
+            if (progress.stage === 'download') {
+              if (progress.total) {
+                const pct = Math.min(100, Math.round(progress.loaded / progress.total * 100));
+                this.loadStatus = `Загрузка базы данных: ${pct}% (${formatBytes(progress.loaded)} / ${formatBytes(progress.total)})`;
+              } else {
+                // Тело пришло сжатым — реальный размер не известен, процент был бы враньём
+                this.loadStatus = `Загрузка базы данных: ${formatBytes(progress.loaded)}...`;
+              }
             } else if (progress.stage === 'parse') {
               this.loadStatus = 'Парсинг базы данных...';
             }

@@ -279,8 +279,8 @@ class DataLayer {
     const items = Array.isArray(raw) ? raw : (raw && raw.products) || [];
     const products = [];
     for (const item of items) {
-      // Два формата: локальный data/products.json (article/name/barcode)
-      // и удалённый db.json (русские ключи «Код товара» и т.д.)
+      // Основной формат — data/products.json (article/name/barcode);
+      // русские ключи оставлены для совместимости с исходным db.json
       const article = String(item['article'] ?? item['Код товара'] ?? '').trim();
       const name = String(item['name'] ?? item['Наименование'] ?? '').trim();
       const barcode = String(item['barcode'] ?? item['ШК товара'] ?? '').trim();
@@ -291,102 +291,37 @@ class DataLayer {
   }
 
   async loadProducts(onProgress) {
-    let products = [];
-    let commitDate = null;
-    // P1-3: берём реальную версию из данных, а не Date.now()
-    let version = null;
-    let remoteUpdatedAt = null;
-
-    // Fetch commit date first — independent of db.json parsing
-    try {
-      commitDate = await this._getCachedCommitDate();
-    } catch {}
-
-    try {
-      const resp = await fetch('https://raw.githubusercontent.com/Monutor/DataBaseProducts/main/db.json');
-      if (resp.ok) {
-        const contentLength = Number(resp.headers.get('Content-Length') || 0);
-        const reader = resp.body.getReader();
-        const chunks = [];
-        let received = 0;
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-          received += value.length;
-          if (onProgress && contentLength) {
-            onProgress({ stage: 'download', loaded: received, total: contentLength });
-          }
-        }
-        const total = chunks.reduce((a, b) => a + b.length, 0);
-        const buf = new Uint8Array(total);
-        let offset = 0;
-        for (const c of chunks) { buf.set(c, offset); offset += c.length; }
-        let remote;
-        try {
-          // Попытка распарсить как обычный JSON
-          const text = new TextDecoder().decode(buf);
-          remote = JSON.parse(text);
-        } catch {
-          // Если не получилось — пробуем распаковать gzip
-          try {
-            const view = new Uint8Array(buf);
-            if (typeof DecompressionStream !== 'undefined' && view.length >= 2 && view[0] === 0x1f && view[1] === 0x8b) {
-              // Потоковая распаковка через pipeThrough
-              const source = new ReadableStream({
-                start(controller) {
-                  controller.enqueue(buf);
-                  controller.close();
-                }
-              });
-              const ds = new DecompressionStream('gzip');
-              const decompressed = source.pipeThrough(ds);
-              if (onProgress) onProgress({ stage: 'decompress', loaded: 0 });
-              const reader = decompressed.getReader();
-              const chunks = [];
-              let totalDecomp = 0;
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                chunks.push(value);
-                totalDecomp += value.length;
-                if (onProgress) {
-                  onProgress({ stage: 'decompress', loaded: totalDecomp });
-                }
-              }
-              const out = new Uint8Array(totalDecomp);
-              let offset = 0;
-              for (const c of chunks) { out.set(c, offset); offset += c.length; }
-              if (onProgress) onProgress({ stage: 'parse', loaded: totalDecomp });
-              await new Promise(r => setTimeout(r, 0));
-              const text = new TextDecoder().decode(out);
-              remote = JSON.parse(text);
-            }
-          } catch (e) {
-            console.error('Gzip decompress error', e);
-          }
-        }
-        if (remote) {
-          products = this._parseProducts(remote);
-          if (remote && remote.version != null) version = remote.version;
-          if (remote && remote.updatedAt) remoteUpdatedAt = remote.updatedAt;
-        }
-      }
-    } catch {}
-
-    if (!products.length) {
-      try {
-        const localResp = await fetch('data/products.json');
-        if (localResp.ok) {
-          const local = await localResp.json();
-          products = this._parseProducts(local);
-          if (version == null && local && local.version != null) version = local.version;
-          if (!remoteUpdatedAt && local && local.updatedAt) remoteUpdatedAt = local.updatedAt;
-          if (!commitDate && local.updatedAt) commitDate = new Date(local.updatedAt);
-        }
-      } catch {}
+    // Единственный источник товаров — локальный data/products.json,
+    // собирается из db.json скриптом scripts/convert_db.py
+    const resp = await fetch('data/products.json');
+    if (!resp.ok) {
+      throw new Error('Не удалось загрузить базу товаров');
     }
 
+    let data;
+    if (resp.body && onProgress) {
+      // 272К товаров — это ~26 МБ, читаем потоком и показываем прогресс
+      const contentLength = Number(resp.headers.get('Content-Length') || 0);
+      const reader = resp.body.getReader();
+      const chunks = [];
+      let received = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        onProgress({ stage: 'download', loaded: received, total: contentLength });
+      }
+      const buf = new Uint8Array(received);
+      let offset = 0;
+      for (const c of chunks) { buf.set(c, offset); offset += c.length; }
+      onProgress({ stage: 'parse' });
+      data = JSON.parse(new TextDecoder().decode(buf));
+    } else {
+      data = await resp.json();
+    }
+
+    const products = this._parseProducts(data);
     this.products = products;
     this.productByArticle.clear();
     this.productByBarcode.clear();
@@ -400,30 +335,12 @@ class DataLayer {
       this.productNameIndex.push({ p, nameLower: (p.name || '').toLowerCase() });
     }
 
+    const version = data && data.version != null ? data.version : null;
+    const updatedAt = data && data.updatedAt ? new Date(data.updatedAt) : null;
     return {
-      version: version != null ? version : (commitDate ? commitDate.getTime() : Date.now()),
-      updatedAt: remoteUpdatedAt ? new Date(remoteUpdatedAt).toISOString() : (commitDate ? commitDate.toISOString() : null)
+      version: version != null ? version : (updatedAt ? updatedAt.getTime() : Date.now()),
+      updatedAt: updatedAt ? updatedAt.toISOString() : null
     };
-  }
-
-  async _getCachedCommitDate() {
-    const now = Date.now();
-    const cached = localStorage.getItem('githubCommitDate');
-    if (cached && now - new Date(cached).getTime() < 24 * 60 * 60 * 1000) {
-      return new Date(cached);
-    }
-    try {
-      const commitsResp = await fetch('https://api.github.com/repos/Monutor/DataBaseProducts/commits?per_page=1');
-      if (commitsResp.ok) {
-        const commits = await commitsResp.json();
-        if (commits[0] && commits[0].commit.author.date) {
-          const d = new Date(commits[0].commit.author.date);
-          localStorage.setItem('githubCommitDate', d.toISOString());
-          return d;
-        }
-      }
-    } catch {}
-    return null;
   }
 
   buildSearchIndex() {
@@ -1280,9 +1197,6 @@ const app = Vue.createApp({
             if (progress.stage === 'download' && progress.total) {
               const pct = Math.round(progress.loaded / progress.total * 100);
               this.loadStatus = `Загрузка базы данных: ${pct}% (${Math.round(progress.loaded/1024)} КБ / ${Math.round(progress.total/1024)} КБ)`;
-            } else if (progress.stage === 'decompress') {
-              const mb = Math.round(progress.loaded / 1024 / 1024 * 10) / 10;
-              this.loadStatus = `Распаковка базы данных: ${mb} МБ`;
             } else if (progress.stage === 'parse') {
               this.loadStatus = 'Парсинг базы данных...';
             }

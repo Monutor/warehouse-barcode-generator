@@ -492,6 +492,23 @@ function findProduct(query) {
   return list.length > 0 ? list[0] : null;
 }
 
+// Разбор строки поиска товара на отдельные запросы.
+// Запятая — безусловный разделитель. Пробел — только когда все токены
+// выглядят кодами: в базе артикулы и ШК состоят исключительно из цифр,
+// а почти все названия содержат пробелы («AC Ballu BPAC-07 SL/N6»),
+// поэтому без проверки текстовый запрос рассыпался бы на отдельные слова.
+function parseProductQueries(raw) {
+  if (typeof raw !== 'string') return [];
+  const queries = [];
+  for (const part of raw.split(',')) {
+    const segment = part.trim();
+    if (!segment) continue;
+    const tokens = segment.split(/\s+/);
+    queries.push(...(tokens.length > 1 && tokens.every(t => /^\d+$/.test(t)) ? tokens : [segment]));
+  }
+  return queries;
+}
+
 // === Vue App ===
 const dataLayer = new DataLayer();
 const barcodeCache = new BarcodeCache();
@@ -669,9 +686,8 @@ const app = Vue.createApp({
     },
 
     foundProducts() {
-      const q = this.productSearchQuery.trim();
-      if (!q) return [];
-      const queries = q.split(',').map(s => s.trim()).filter(Boolean);
+      const queries = parseProductQueries(this.productSearchQuery);
+      if (queries.length === 0) return [];
       const results = [];
       const seenQueries = new Set();
       const seenArticles = new Set();
@@ -688,10 +704,7 @@ const app = Vue.createApp({
     },
 
     notFoundArticles() {
-      const q = this.productSearchQuery.trim();
-      if (!q) return [];
-      const queries = q.split(',').map(s => s.trim()).filter(Boolean);
-      return queries.filter(a => !findProduct(a));
+      return parseProductQueries(this.productSearchQuery).filter(a => !findProduct(a));
     },
 
     formattedDataDate() {
